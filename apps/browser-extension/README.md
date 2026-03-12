@@ -41,23 +41,6 @@ The extension version is shown in the site footer alongside the other Modrinth l
 - Node.js
 - pnpm
 
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/creeperkatze/modrinth-extras.git
-cd modrinth-extras
-
-# Install dependencies
-pnpm install
-
-# Start development server (Chrome)
-pnpm wxt dev
-
-# Start development server (Firefox)
-pnpm wxt dev -b firefox
-```
-
 Loading the unpacked extension:
 
 1. Open `chrome://extensions` (or `about:debugging` in Firefox)
@@ -68,10 +51,10 @@ Loading the unpacked extension:
 
 ```bash
 # Production build for Chrome
-pnpm wxt build
+pnpm ext:build
 
 # Production build for Firefox
-pnpm wxt build -b firefox
+pnpm ext:build:firefox
 ```
 
 ## 🤝 Contributing
