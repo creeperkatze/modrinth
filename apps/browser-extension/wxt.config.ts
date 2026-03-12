@@ -6,7 +6,7 @@ export default defineConfig({
 	modules: ['@wxt-dev/module-vue'],
 	manifest: {
 		name: 'Modrinth Extra',
-		description: 'Adds extra features to Modrinth',
+		description: 'Adds unofficial extra features to the Modrinth website.',
 		version: '0.0.4',
 		icons: {
 			128: '/icon-128.png',
