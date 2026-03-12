@@ -1,5 +1,5 @@
 {
-	"name": "@modrinth/browser-extension",
+	"name": "@creeperkatze/modrinth-extra",
 	"version": "0.0.1",
 	"private": true,
 	"type": "module",

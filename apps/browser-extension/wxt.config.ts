@@ -5,8 +5,8 @@ export default defineConfig({
 	extensionApi: 'chrome',
 	modules: ['@wxt-dev/module-vue'],
 	manifest: {
-		name: 'Modrinth Notifications',
-		description: 'Adds a notification bell indicator to modrinth.com',
+		name: 'Modrinth Extra',
+		description: 'Adds extra features to Modrinth',
 		version: '0.0.1',
 		permissions: [],
 		host_permissions: [
