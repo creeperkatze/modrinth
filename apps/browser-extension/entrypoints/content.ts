@@ -3,6 +3,7 @@ import FloatingVue from 'floating-vue'
 import { provideI18n } from '@modrinth/ui'
 import FooterBadge from '../components/FooterBadge.vue'
 import NotificationsIndicator from '../components/NotificationsIndicator.vue'
+import SidebarExtra from '../components/SidebarExtra.vue'
 import '../assets/modrinth-classes.css'
 import '../assets/tailwind.css'
 
@@ -114,8 +115,14 @@ export default defineContentScript({
 				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 				(window as any).__nuxt_app?.vueApp?.config?.globalProperties?.$router
 			if (!nuxtRouter) return false
-			nuxtRouter.beforeEach(() => unmount())
-			nuxtRouter.afterEach(() => scheduleInject())
+			nuxtRouter.beforeEach(() => {
+				unmount()
+				unmountSidebar()
+			})
+			nuxtRouter.afterEach(() => {
+				scheduleInject()
+				scheduleInjectSidebar()
+			})
 			return true
 		}
 
@@ -143,9 +150,103 @@ export default defineContentScript({
 			if (footerContainer && !document.contains(footerContainer)) {
 				unmountFooter()
 			}
+			if (sidebarContainer && !document.contains(sidebarContainer)) {
+				unmountSidebar()
+			}
 			injectFooterBadge()
+			injectSidebar()
 		})
 		domObserver.observe(document.documentElement, { childList: true, subtree: true })
+
+		let sidebarContainer: HTMLElement | null = null
+		let sidebarApp: ReturnType<typeof createApp> | null = null
+
+		function unmountSidebar() {
+			if (sidebarApp) {
+				sidebarApp.unmount()
+				sidebarApp = null
+			}
+			if (sidebarContainer?.parentElement) {
+				sidebarContainer.parentElement.removeChild(sidebarContainer)
+			}
+			sidebarContainer = null
+		}
+
+		function findAnchorElement(): { after: HTMLElement; fallback?: boolean } | null {
+			const path = window.location.pathname
+
+			if (/^\/(mod|plugin|datapack|shader|resourcepack|modpack)\/[^/]+\/?$/.test(path)) {
+				// Project page: after the "Details" card.
+				for (const card of document.querySelectorAll<HTMLElement>(
+					'.card.flex-card.experimental-styles-within',
+				)) {
+					if (card.querySelector('h2')?.textContent?.trim() === 'Details')
+						return { after: card }
+				}
+				return null
+			}
+
+			if (/^\/user\/[^/]+\/?$/.test(path)) {
+				// User profile page: after the last .card.flex-card, or append to sidebar if none.
+				const sidebar = document.querySelector<HTMLElement>('.normal-page__sidebar')
+				if (!sidebar) return null
+				const cards = sidebar.querySelectorAll<HTMLElement>('.card.flex-card')
+				if (cards.length > 0) return { after: cards[cards.length - 1] }
+				return { after: sidebar, fallback: true }
+			}
+
+			if (/^\/organization\/[^/]+\/?$/.test(path)) {
+				// Organization page: after the "Members" card.
+				const sidebar = document.querySelector<HTMLElement>('.normal-page__sidebar')
+				if (!sidebar) return null
+				const cards = sidebar.querySelectorAll<HTMLElement>('.card.flex-card')
+				if (cards.length > 0) return { after: cards[cards.length - 1] }
+				return null
+			}
+
+			if (/^\/collection\/[^/]+\/?$/.test(path)) {
+				// Collection page uses SidebarCard (div.flex.flex-col.gap-3.p-4).
+				const sidebar = document.querySelector<HTMLElement>('.ui-normal-page__sidebar')
+				if (!sidebar) return null
+				const cards = sidebar.querySelectorAll<HTMLElement>('.flex.flex-col.gap-3.p-4')
+				if (cards.length > 0) return { after: cards[cards.length - 1] }
+				return null
+			}
+
+			return null
+		}
+
+		function injectSidebar() {
+			if (sidebarContainer && document.contains(sidebarContainer)) return
+			unmountSidebar()
+
+			const anchor = findAnchorElement()
+			if (!anchor) return
+
+			sidebarContainer = document.createElement('div')
+			sidebarContainer.id = 'modrinth-ext-sidebar-extra'
+			sidebarContainer.style.display = 'contents'
+			if (anchor.fallback) {
+				anchor.after.appendChild(sidebarContainer)
+			} else {
+				anchor.after.after(sidebarContainer)
+			}
+
+			const pageUrl = window.location.href.split('?')[0].split('#')[0]
+			sidebarApp = createApp(h(SidebarExtra, { pageUrl }))
+			sidebarApp.mount(sidebarContainer)
+		}
+
+		let sidebarDebounce: ReturnType<typeof setTimeout> | null = null
+		function scheduleInjectSidebar() {
+			if (sidebarDebounce) clearTimeout(sidebarDebounce)
+			sidebarDebounce = setTimeout(() => {
+				sidebarDebounce = null
+				injectSidebar()
+			}, 300)
+		}
+
+		scheduleInjectSidebar()
 
 		let footerContainer: HTMLElement | null = null
 		let footerApp: ReturnType<typeof createApp> | null = null
