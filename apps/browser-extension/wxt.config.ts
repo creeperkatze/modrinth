@@ -7,8 +7,11 @@ export default defineConfig({
 	manifest: {
 		name: 'Modrinth Extra',
 		description: 'Adds unofficial extra features to the Modrinth website.',
-		version: '0.0.5',
+		version: '0.0.6',
 		icons: {
+			16: '/icon-16.png',
+			32: '/icon-32.png',
+			48: '/icon-48.png',
 			128: '/icon-128.png',
 		},
 		permissions: [],
