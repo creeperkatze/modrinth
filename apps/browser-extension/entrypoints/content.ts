@@ -4,6 +4,7 @@ import { provideI18n } from '@modrinth/ui'
 import FooterBadge from '../components/FooterBadge.vue'
 import NotificationsIndicator from '../components/NotificationsIndicator.vue'
 import SidebarExtra from '../components/SidebarExtra.vue'
+import { getPageRouter } from '../helpers/page-router'
 import '../assets/modrinth-classes.css'
 import '../assets/tailwind.css'
 
@@ -101,19 +102,11 @@ export default defineContentScript({
 		// Hook into the page's Nuxt router so we can unmount *before* navigation
 		// starts (beforeEach) and re-inject *after* it completes (afterEach).
 		//
-		// Vue 3 attaches __vue_app__ to the root mount element (#__nuxt), giving
-		// reliable access to the router without relying on window globals.
-		//
 		// Without beforeEach: Nuxt swaps layouts mid-navigation, our container is
 		// removed from the DOM, and the still-running Vue app tries to insert into
 		// a null parent — corrupting the page's DOM and crashing its floating-vue.
 		function hookRouter() {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const nuxtRoot = document.getElementById('__nuxt') as any
-			const nuxtRouter =
-				nuxtRoot?.__vue_app__?.config?.globalProperties?.$router ??
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				(window as any).__nuxt_app?.vueApp?.config?.globalProperties?.$router
+			const nuxtRouter = getPageRouter()
 			if (!nuxtRouter) return false
 			nuxtRouter.beforeEach(() => {
 				unmount()
@@ -153,8 +146,8 @@ export default defineContentScript({
 			if (sidebarContainer && !document.contains(sidebarContainer)) {
 				unmountSidebar()
 			}
-			injectFooterBadge()
-			injectSidebar()
+			scheduleInjectFooterBadge()
+			scheduleInjectSidebar()
 		})
 		domObserver.observe(document.documentElement, { childList: true, subtree: true })
 
@@ -250,6 +243,14 @@ export default defineContentScript({
 
 		let footerContainer: HTMLElement | null = null
 		let footerApp: ReturnType<typeof createApp> | null = null
+		let footerDebounce: ReturnType<typeof setTimeout> | null = null
+		function scheduleInjectFooterBadge() {
+			if (footerDebounce) clearTimeout(footerDebounce)
+			footerDebounce = setTimeout(() => {
+				footerDebounce = null
+				injectFooterBadge()
+			}, 300)
+		}
 
 		function unmountFooter() {
 			if (footerApp) {
@@ -283,6 +284,6 @@ export default defineContentScript({
 			footerApp.mount(footerContainer)
 		}
 
-		injectFooterBadge()
+		scheduleInjectFooterBadge()
 	},
 })

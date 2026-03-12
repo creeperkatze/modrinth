@@ -5,9 +5,9 @@ export default defineConfig({
 	extensionApi: 'chrome',
 	modules: ['@wxt-dev/module-vue'],
 	manifest: {
-		name: 'Modrinth Extra',
+		name: 'Modrinth Extras',
 		description: 'Adds unofficial extra features to the Modrinth website.',
-		version: '0.0.8',
+		version: '0.0.9',
 		icons: {
 			16: '/icon-16.png',
 			32: '/icon-32.png',

@@ -2,7 +2,7 @@
 	<hr class="w-full border-button-border my-0.5" />
 	<p class="m-0 flex items-center gap-1">
 		<ExtLogo aria-hidden="true" class="h-4 w-4" />
-		Modrinth Extra {{ version }}
+		Modrinth Extras {{ version }}
 	</p>
 </template>
 

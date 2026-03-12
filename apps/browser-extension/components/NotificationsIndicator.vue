@@ -225,6 +225,7 @@ import {
 } from '../helpers/platform-notifications'
 import { acceptTeamInvite, removeSelfFromTeam } from '../helpers/teams'
 import { useBaseFetch } from '../composables/useBaseFetch'
+import { navigate, resolveLink } from '../helpers/page-router'
 
 const props = defineProps({
 	dropdownId: {
@@ -247,35 +248,6 @@ function formatRelativeTime(value: Date | number | string | null | undefined): s
 	if (abs < 2_629_746_000) return rtf.format(Math.round(diff / 604_800_000), 'week')
 	if (abs < 31_556_952_000) return rtf.format(Math.round(diff / 2_629_746_000), 'month')
 	return rtf.format(Math.round(diff / 31_556_952_000), 'year')
-}
-
-// Resolve a path or URL to an absolute modrinth.com URL (used for href attributes)
-function resolveLink(link: string): string {
-	if (link.startsWith('http')) return link
-	return 'https://modrinth.com' + link
-}
-
-// Navigate using the page's Nuxt/Vue router to avoid full page reloads.
-// Vue 3 attaches __vue_app__ to the root mount element (#__nuxt), which
-// gives us reliable access to the router without relying on window globals.
-function getPageRouter(): { push: (path: string) => void } | null {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const nuxtRoot = document.getElementById('__nuxt') as any
-	return (
-		nuxtRoot?.__vue_app__?.config?.globalProperties?.$router ??
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		(window as any).__nuxt_app?.vueApp?.config?.globalProperties?.$router ??
-		null
-	)
-}
-
-function navigate(path: string) {
-	const router = getPageRouter()
-	if (router) {
-		router.push(path)
-	} else {
-		window.location.href = resolveLink(path)
-	}
 }
 
 const router = { push: navigate }
