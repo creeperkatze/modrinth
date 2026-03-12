@@ -1,4 +1,4 @@
-# <img src="public/icon.svg" alt="Modrinth Extras" width="24"> Modrinth Extras
+# <img src="public/icon.svg" alt="Modrinth Extras" width="32"> Modrinth Extras
 
 Adds unofficial extra features to the [Modrinth](https://modrinth.com) website.
 
@@ -6,7 +6,7 @@ Adds unofficial extra features to the [Modrinth](https://modrinth.com) website.
 ![GitHub Pull Requests](https://img.shields.io/github/issues-pr/creeperkatze/modrinth-extras?labelColor=0d143c)
 ![GitHub Repo stars](https://img.shields.io/github/stars/creeperkatze/modrinth-extras?style=flat&labelColor=0d143c)
 
-> [!NOTE]
+> [!IMPORTANT]
 > This repository is a mirror of [`apps/browser-extension`](https://github.com/creeperkatze/modrinth/tree/browser-extension/apps/browser-extension) in the [creeperkatze/modrinth](https://github.com/creeperkatze/modrinth) monorepo, synced via `git subtree`. Pull requests should be created there, while issues should be opened in this repository.
 
 ## 🚀 Installation
@@ -84,4 +84,4 @@ The extension depends on `@modrinth/ui` and `@modrinth/assets` as local workspac
 
 ## 📜 License
 
-MIT
+AGPL-3.0
