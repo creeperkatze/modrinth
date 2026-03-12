@@ -22,7 +22,7 @@ You must be logged in to modrinth.com for all features to work.
 
 ### Notification Indicator
 
-A live bell icon is injected into the Modrinth header, showing the count of unread notifications. Click it to open a dropdown with your recent unread notifications — accept or decline team/organization invites, mark individual notifications as read, or clear them all at once. Auto-refreshes every minute.
+A live bell icon is injected into the Modrinth header, showing the count of unread notifications. Click it to open a dropdown with your recent unread notifications, accept or decline team/organization invites, mark individual notifications as read, or clear them all at once.
 
 ### Sidebar Extras
 
@@ -30,22 +30,33 @@ On project, user, organization, and collection pages, an **Extra** card is added
 
 - **Generate embed** — opens [Modfolio](https://modfolio.creeperkatze.de) pre-loaded with the current page URL to generate an embeddable card or badge.
 
-### Footer Badge
-
-The extension version is shown in the site footer alongside the other Modrinth links.
-
 ## 👨‍💻 Development
 
-### Prerequisites
+This repository is a publish mirror, development happens in the [`browser-extension` branch](https://github.com/creeperkatze/modrinth/tree/browser-extension) of [creeperkatze/modrinth](https://github.com/creeperkatze/modrinth). To contribute, open a pull request there against `apps/browser-extension`.
 
-- Node.js
-- pnpm
+The extension depends on `@modrinth/ui` and `@modrinth/assets` as local workspace packages, so it cannot be built outside of the monorepo.
 
-Loading the unpacked extension:
+### Setup
 
-1. Open `chrome://extensions` (or `about:debugging` in Firefox)
-2. Enable Developer Mode
-3. Click **Load unpacked** and select the `.output/chrome-mv3-dev` directory
+```bash
+git clone https://github.com/creeperkatze/modrinth.git
+cd modrinth
+
+# Install dependencies
+pnpm install
+
+# Start dev server (Chrome)
+pnpm ext:dev
+
+# Start dev server (Firefox)
+pnpm ext:dev:firefox
+```
+
+Then load the extension:
+
+1. Open `chrome://extensions` (or `about:debugging#/runtime/this-firefox` in Firefox)
+2. Enable **Developer Mode**
+3. Click **Load unpacked** and select `apps/browser-extension/.output/chrome-mv3-dev`
 
 ### Build
 
