@@ -1,9 +1,14 @@
 <template>
 	<hr class="w-full border-button-border my-0.5" />
-	<p class="m-0 flex items-center gap-1">
+	<a
+		href="https://github.com/creeperkatze/modrinth-extras"
+		target="_blank"
+		rel="noopener"
+		class="m-0 flex items-center gap-1 no-underline hover:underline"
+	>
 		<ExtLogo aria-hidden="true" class="h-4 w-4" />
 		Modrinth Extras {{ version }}
-	</p>
+	</a>
 </template>
 
 <script setup lang="ts">
