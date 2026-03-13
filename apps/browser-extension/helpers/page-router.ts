@@ -1,36 +1,35 @@
 /**
- * Utilities for accessing the host page's Nuxt 3 router from a content script.
+ * Navigation helpers for the ISOLATED world content script.
  *
- * Nuxt 3 explicitly sets `window.__nuxt_app = nuxtApp` on the client, and
- * `nuxtApp.$router` is a first-class public property — preferred over digging
- * through Vue internals (`__vue_app__.config.globalProperties.$router`).
- *
- * Falls back to the Vue 3 internal path for resilience, and ultimately to a
- * full page load if no router is available yet.
+ * The actual Nuxt router lives in the MAIN world and is accessed via
+ * the router-bridge content script through CustomEvents.
  */
 
-export function getPageRouter(): { push: (path: string) => void } | null {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const w = window as any
-	return (
-		w.__nuxt_app?.$router ??
-		(document.getElementById('__nuxt') as any)?.__vue_app__?.config?.globalProperties?.$router ??
-		null
-	)
-}
-
-/** Resolve a relative path to an absolute modrinth.com URL (for href attributes). */
+/** Resolve a relative path to an absolute URL on the current origin (for href attributes). */
 export function resolveLink(link: string): string {
 	if (link.startsWith('http')) return link
-	return 'https://modrinth.com' + link
+	return window.location.origin + link
 }
 
-/** Navigate using the page router for a client-side transition, falling back to a full load. */
+/** Navigate using the page router (SPA) via the MAIN world bridge. */
 export function navigate(path: string): void {
-	const router = getPageRouter()
-	if (router) {
-		router.push(path)
-	} else {
-		window.location.href = resolveLink(path)
+	if (path.startsWith('http')) {
+		try {
+			const url = new URL(path)
+			if (url.origin === window.location.origin) {
+				path = url.pathname + url.search + url.hash
+			} else {
+				window.location.href = path
+				return
+			}
+		} catch {
+			// invalid URL — treat as relative path
+		}
 	}
+
+	window.dispatchEvent(
+		new CustomEvent('modrinth-ext:navigate', {
+			detail: { path, fallbackUrl: resolveLink(path) },
+		}),
+	)
 }

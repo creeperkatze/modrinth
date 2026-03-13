@@ -4,7 +4,6 @@ import { provideI18n } from '@modrinth/ui'
 import FooterBadge from '../components/FooterBadge.vue'
 import NotificationsIndicator from '../components/NotificationsIndicator.vue'
 import SidebarExtra from '../components/SidebarExtra.vue'
-import { getPageRouter } from '../helpers/page-router'
 import '../assets/modrinth-classes.css'
 import '../assets/tailwind.css'
 
@@ -99,35 +98,20 @@ export default defineContentScript({
 			}, 300)
 		}
 
-		// Hook into the page's Nuxt router so we can unmount *before* navigation
-		// starts (beforeEach) and re-inject *after* it completes (afterEach).
-		//
-		// Without beforeEach: Nuxt swaps layouts mid-navigation, our container is
-		// removed from the DOM, and the still-running Vue app tries to insert into
-		// a null parent — corrupting the page's DOM and crashing its floating-vue.
-		function hookRouter() {
-			const nuxtRouter = getPageRouter()
-			if (!nuxtRouter) return false
-			nuxtRouter.beforeEach(() => {
-				unmount()
-				unmountSidebar()
-			})
-			nuxtRouter.afterEach(() => {
-				scheduleInject()
-				scheduleInjectSidebar()
-			})
-			return true
-		}
+		// Listen for router lifecycle events from the MAIN world bridge script.
+		// Only tear down page-specific components (sidebar) on navigation.
+		// The header notification indicator persists across SPA navigations —
+		// the MutationObserver handles the rare case where Nuxt removes the
+		// header entirely (layout change).
+		window.addEventListener('modrinth-ext:before-navigate', () => {
+			unmountSidebar()
+		})
+		window.addEventListener('modrinth-ext:after-navigate', () => {
+			scheduleInject()
+			scheduleInjectSidebar()
+		})
 
-		// Schedule the initial injection and try to hook the router right away.
 		scheduleInject()
-		if (!hookRouter()) {
-			// Router not ready yet — keep trying on DOM mutations until it is.
-			const initObserver = new MutationObserver(() => {
-				if (hookRouter()) initObserver.disconnect()
-			})
-			initObserver.observe(document.documentElement, { childList: true, subtree: true })
-		}
 
 		// Safety-net MutationObserver: if the container is removed from the DOM
 		// by anything OTHER than our beforeEach hook (e.g. Nuxt re-rendering the

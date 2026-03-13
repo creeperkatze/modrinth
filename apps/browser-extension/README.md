@@ -32,7 +32,8 @@ On project, user, organization, and collection pages, an **Extra** card is added
 
 ## 👨‍💻 Development
 
-The extension depends on `@modrinth/ui` and `@modrinth/assets` as local workspace packages, so it must be built from within the [creeperkatze/modrinth](https://github.com/creeperkatze/modrinth/tree/browser-extension) monorepo.
+> [!IMPORTANT]
+> The extension depends on `@modrinth/ui` and `@modrinth/assets` as local workspace packages, so it must be built from within the [creeperkatze/modrinth](https://github.com/creeperkatze/modrinth/tree/browser-extension) monorepo.
 
 ### Setup
 
@@ -68,7 +69,7 @@ pnpm ext:build:firefox
 
 ## 🤝 Contributing
 
-Contributions are always welcome! Open a pull request in the [creeperkatze/modrinth](https://github.com/creeperkatze/modrinth/tree/browser-extension) monorepo against `apps/browser-extension`.
+Contributions are always welcome! Open a pull request in the [creeperkatze/modrinth](https://github.com/creeperkatze/modrinth/tree/browser-extension) monorepo against `apps/browser-extension`, as described in the [Development](#-development) section.
 
 ## 📜 License
 

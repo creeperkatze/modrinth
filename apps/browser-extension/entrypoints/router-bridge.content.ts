@@ -1,0 +1,63 @@
+/**
+ * MAIN world content script that bridges the Nuxt router to the extension.
+ *
+ * The primary content script (content.ts) runs in the ISOLATED world and
+ * cannot access the page's JavaScript — including `window.__nuxt_app` and
+ * the Nuxt router. This tiny MAIN world script acts as a bridge:
+ *
+ *  - Hooks into the Nuxt router lifecycle (beforeEach / afterEach) and
+ *    dispatches CustomEvents so the ISOLATED script can react.
+ *  - Listens for `modrinth-ext:navigate` events and calls `router.push()`
+ *    for true client-side SPA navigation.
+ */
+export default defineContentScript({
+	matches: ['https://modrinth.com/*', 'https://staging.modrinth.com/*'],
+	world: 'MAIN',
+	runAt: 'document_idle',
+
+	main() {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const w = window as any
+
+		function getRouter() {
+			return (
+				w.__nuxt_app?.$router ??
+				(document.getElementById('__nuxt') as any)?.__vue_app__?.config
+					?.globalProperties?.$router ??
+				null
+			)
+		}
+
+		window.addEventListener('modrinth-ext:navigate', ((e: CustomEvent) => {
+			const { path, fallbackUrl } = e.detail
+			const router = getRouter()
+			if (router) {
+				router.push(path)
+			} else {
+				window.location.href = fallbackUrl
+			}
+		}) as EventListener)
+
+		function hookRouter(): boolean {
+			const router = getRouter()
+			if (!router) return false
+
+			router.beforeEach(() => {
+				window.dispatchEvent(new CustomEvent('modrinth-ext:before-navigate'))
+			})
+			router.afterEach(() => {
+				window.dispatchEvent(new CustomEvent('modrinth-ext:after-navigate'))
+			})
+
+			window.dispatchEvent(new CustomEvent('modrinth-ext:router-ready'))
+			return true
+		}
+
+		if (!hookRouter()) {
+			const observer = new MutationObserver(() => {
+				if (hookRouter()) observer.disconnect()
+			})
+			observer.observe(document.documentElement, { childList: true, subtree: true })
+		}
+	},
+})
