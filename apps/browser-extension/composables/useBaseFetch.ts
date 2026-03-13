@@ -1,11 +1,4 @@
-const API_BASES: Record<string, string> = {
-	'modrinth.com': 'https://api.modrinth.com',
-	'staging.modrinth.com': 'https://staging-api.modrinth.com',
-}
-
-function getApiBase(): string {
-	return API_BASES[location.hostname] ?? 'https://api.modrinth.com'
-}
+const API_BASE = 'https://api.modrinth.com'
 
 let cachedToken: string | null = null
 
@@ -32,7 +25,7 @@ export async function useBaseFetch(
 	const { apiVersion = 2, ...fetchOptions } = options as RequestInit & { apiVersion?: number }
 	const token = getToken()
 
-	const res = await fetch(`${getApiBase()}/v${apiVersion}/${url}`, {
+	const res = await fetch(`${API_BASE}/v${apiVersion}/${url}`, {
 		...fetchOptions,
 		headers: {
 			...(token ? { Authorization: token } : {}),

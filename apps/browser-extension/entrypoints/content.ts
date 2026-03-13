@@ -8,7 +8,7 @@ import { loadSettings, DEFAULTS, type ExtensionSettings } from '../helpers/setti
 import '../assets/tailwind.css'
 
 export default defineContentScript({
-	matches: ['https://modrinth.com/*', 'https://staging.modrinth.com/*'],
+	matches: ['https://modrinth.com/*'],
 	// 'manifest' tells Chrome to auto-load the compiled CSS (Tailwind utilities,
 	// scoped @modrinth/ui component styles, floating-vue positioning CSS) as a
 	// content stylesheet before the script runs.

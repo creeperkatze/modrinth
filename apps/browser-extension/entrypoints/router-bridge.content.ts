@@ -11,7 +11,7 @@
  *    for true client-side SPA navigation.
  */
 export default defineContentScript({
-	matches: ['https://modrinth.com/*', 'https://staging.modrinth.com/*'],
+	matches: ['https://modrinth.com/*'],
 	world: 'MAIN',
 	runAt: 'document_idle',
 
