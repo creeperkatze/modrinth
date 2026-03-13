@@ -17,7 +17,7 @@ jobs:
         run: pip install git-filter-repo
 
       - name: Extract apps/browser-extension subtree
-        run: git filter-repo --path apps/browser-extension/ --path-rename apps/browser-extension/: --force
+        run: "git filter-repo --path apps/browser-extension/ --path-rename apps/browser-extension/: --force"
 
       - name: Push to standalone repo
         run: |
