@@ -1,0 +1,25 @@
+name: Sync Browser Extension
+
+on:
+  push:
+    branches:
+      - browser-extension
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install git-filter-repo
+        run: pip install git-filter-repo
+
+      - name: Extract apps/browser-extension subtree
+        run: git filter-repo --path apps/browser-extension/ --path-rename apps/browser-extension/: --force
+
+      - name: Push to standalone repo
+        run: |
+          git remote add target https://x-access-token:${{ secrets.EXT_REPO_TOKEN }}@github.com/CreeperKatze/modrinth-extras.git
+          git push target HEAD:main --force
