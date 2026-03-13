@@ -5,13 +5,13 @@
  * the router-bridge content script through CustomEvents.
  */
 
-/** Resolve a relative path to an absolute URL on the current origin (for href attributes). */
+// Resolve a relative path to an absolute URL on the current origin
 export function resolveLink(link: string): string {
 	if (link.startsWith('http')) return link
 	return window.location.origin + link
 }
 
-/** Navigate using the page router (SPA) via the MAIN world bridge. */
+// Navigate using the page router (SPA) via the MAIN world bridge
 export function navigate(path: string): void {
 	if (path.startsWith('http')) {
 		try {
@@ -23,7 +23,7 @@ export function navigate(path: string): void {
 				return
 			}
 		} catch {
-			// invalid URL — treat as relative path
+			// invalid URL, treat as relative path
 		}
 	}
 

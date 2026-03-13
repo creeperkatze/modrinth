@@ -41,9 +41,7 @@ export async function fetchProjectDependencies(slugOrId: string): Promise<Enrich
 	const projectIds = [...new Set(relevant.map((d) => d.project_id))]
 	let projects: ProjectInfo[] = []
 	try {
-		projects = await useBaseFetch(
-			`projects?ids=${encodeURIComponent(JSON.stringify(projectIds))}`,
-		)
+		projects = await useBaseFetch(`projects?ids=${encodeURIComponent(JSON.stringify(projectIds))}`)
 	} catch {
 		// Return deps with null project info if batch fetch fails
 	}

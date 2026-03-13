@@ -9,15 +9,11 @@ function getToken(): string {
 	return cachedToken
 }
 
-/** Call this if the user logs in/out mid-session. */
 export function invalidateTokenCache() {
 	cachedToken = null
 }
 
-/**
- * Browser-compatible drop-in for Nuxt's useBaseFetch.
- * Reads the auth token from the `auth-token` cookie (httpOnly: false on modrinth.com).
- */
+// Browser-compatible drop-in for Nuxt's useBaseFetch.
 export async function useBaseFetch(
 	url: string,
 	options: RequestInit & { apiVersion?: number } = {},

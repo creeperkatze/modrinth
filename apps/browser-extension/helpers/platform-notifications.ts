@@ -122,20 +122,12 @@ export async function fetchExtraNotificationData(
 				n.extra_data.report = reports.find((x) => x.id === n.body!.report_id)
 				const t = n.extra_data.report?.item_type
 				if (t === 'project')
-					n.extra_data.project = projects.find(
-						(x) => x.id === n.extra_data?.report?.item_id,
-					)
+					n.extra_data.project = projects.find((x) => x.id === n.extra_data?.report?.item_id)
 				else if (t === 'user')
-					n.extra_data.user = users.find(
-						(x) => x.id === n.extra_data?.report?.item_id,
-					)
+					n.extra_data.user = users.find((x) => x.id === n.extra_data?.report?.item_id)
 				else if (t === 'version') {
-					n.extra_data.version = versions.find(
-						(x) => x.id === n.extra_data?.report?.item_id,
-					)
-					n.extra_data.project = projects.find(
-						(x) => x.id === n.extra_data?.version?.project_id,
-					)
+					n.extra_data.version = versions.find((x) => x.id === n.extra_data?.report?.item_id)
+					n.extra_data.project = projects.find((x) => x.id === n.extra_data?.version?.project_id)
 				}
 			}
 			if (n.body.thread_id) n.extra_data.thread = threads.find((x) => x.id === n.body!.thread_id)
@@ -173,9 +165,6 @@ function isSimilar(a: PlatformNotification, b: PlatformNotification | undefined)
 	return !!a?.body?.project_id && a.body!.project_id === b?.body?.project_id
 }
 
-export async function markAsRead(
-	ids: string[],
-	fetcher: Fetcher = useBaseFetch,
-): Promise<void> {
+export async function markAsRead(ids: string[], fetcher: Fetcher = useBaseFetch): Promise<void> {
 	await fetcher(`notifications?ids=${JSON.stringify([...new Set(ids)])}`, { method: 'PATCH' })
 }

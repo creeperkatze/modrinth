@@ -65,40 +65,71 @@
 										<template #primary>
 											<a
 												v-if="notif.extra_data?.project"
-												:href="resolveLink(`/project/${(notif.extra_data as PlatformNotificationExtraData).project!.slug}`)"
+												:href="
+													resolveLink(
+														`/project/${(notif.extra_data as PlatformNotificationExtraData).project!.slug}`,
+													)
+												"
 												tabindex="-1"
 												class="smart-clickable:allow-pointer-events"
-												@click.stop.prevent="navigate(`/project/${(notif.extra_data as PlatformNotificationExtraData).project!.slug}`)"
+												@click.stop.prevent="
+													navigate(
+														`/project/${(notif.extra_data as PlatformNotificationExtraData).project!.slug}`,
+													)
+												"
 											>
 												<Avatar
 													size="xs"
-													:src="(notif.extra_data as PlatformNotificationExtraData).project!.icon_url"
+													:src="
+														(notif.extra_data as PlatformNotificationExtraData).project!.icon_url
+													"
 													aria-hidden="true"
 												/>
 											</a>
 											<a
 												v-else-if="notif.extra_data?.organization"
-												:href="resolveLink(`/organization/${(notif.extra_data as PlatformNotificationExtraData).organization!.slug}`)"
+												:href="
+													resolveLink(
+														`/organization/${(notif.extra_data as PlatformNotificationExtraData).organization!.slug}`,
+													)
+												"
 												tabindex="-1"
 												class="smart-clickable:allow-pointer-events"
-												@click.stop.prevent="navigate(`/organization/${(notif.extra_data as PlatformNotificationExtraData).organization!.slug}`)"
+												@click.stop.prevent="
+													navigate(
+														`/organization/${(notif.extra_data as PlatformNotificationExtraData).organization!.slug}`,
+													)
+												"
 											>
 												<Avatar
 													size="xs"
-													:src="(notif.extra_data as PlatformNotificationExtraData).organization!.icon_url"
+													:src="
+														(notif.extra_data as PlatformNotificationExtraData).organization!
+															.icon_url
+													"
 													aria-hidden="true"
 												/>
 											</a>
 											<a
 												v-else-if="notif.extra_data?.user"
-												:href="resolveLink(`/user/${(notif.extra_data as PlatformNotificationExtraData).user!.username}`)"
+												:href="
+													resolveLink(
+														`/user/${(notif.extra_data as PlatformNotificationExtraData).user!.username}`,
+													)
+												"
 												tabindex="-1"
 												class="smart-clickable:allow-pointer-events"
-												@click.stop.prevent="navigate(`/user/${(notif.extra_data as PlatformNotificationExtraData).user!.username}`)"
+												@click.stop.prevent="
+													navigate(
+														`/user/${(notif.extra_data as PlatformNotificationExtraData).user!.username}`,
+													)
+												"
 											>
 												<Avatar
 													size="xs"
-													:src="(notif.extra_data as PlatformNotificationExtraData).user!.avatar_url"
+													:src="
+														(notif.extra_data as PlatformNotificationExtraData).user!.avatar_url
+													"
 													aria-hidden="true"
 												/>
 											</a>
@@ -106,10 +137,7 @@
 										</template>
 										<template #secondary>
 											<ScaleIcon
-												v-if="
-													notif.type === 'moderator_message' ||
-													notif.type === 'status_change'
-												"
+												v-if="notif.type === 'moderator_message' || notif.type === 'status_change'"
 												class="moderation-color"
 											/>
 											<UserPlusIcon
@@ -118,8 +146,7 @@
 											/>
 											<UserPlusIcon
 												v-else-if="
-													notif.type === 'organization_invite' &&
-													notif.extra_data?.organization
+													notif.type === 'organization_invite' && notif.extra_data?.organization
 												"
 												class="creator-color"
 											/>
@@ -150,8 +177,7 @@
 									<div class="smart-clickable:allow-pointer-events flex gap-2">
 										<button
 											v-if="
-												(notif.type === 'team_invite' ||
-													notif.type === 'organization_invite') &&
+												(notif.type === 'team_invite' || notif.type === 'organization_invite') &&
 												!notif.read
 											"
 											class="iconified-button square-button brand-button [&>svg]:!mr-0"
@@ -161,8 +187,7 @@
 										</button>
 										<button
 											v-if="
-												(notif.type === 'team_invite' ||
-													notif.type === 'organization_invite') &&
+												(notif.type === 'team_invite' || notif.type === 'organization_invite') &&
 												!notif.read
 											"
 											class="iconified-button square-button danger-button [&>svg]:!mr-0"
@@ -192,7 +217,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import {
 	BellIcon,
 	CalendarIcon,
@@ -214,7 +238,10 @@ import {
 	ScrollablePanel,
 	SmartClickable,
 } from '@modrinth/ui'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
+import { useBaseFetch } from '../composables/useBaseFetch'
+import { navigate, resolveLink } from '../helpers/page-router'
 import {
 	fetchExtraNotificationData,
 	groupNotifications,
@@ -224,8 +251,6 @@ import {
 	type PlatformNotificationExtraData,
 } from '../helpers/platform-notifications'
 import { acceptTeamInvite, removeSelfFromTeam } from '../helpers/teams'
-import { useBaseFetch } from '../composables/useBaseFetch'
-import { navigate, resolveLink } from '../helpers/page-router'
 
 const props = defineProps({
 	dropdownId: {
@@ -283,7 +308,6 @@ onMounted(async () => {
 		console.error('[Modrinth Ext] Auth failed — are you logged in to modrinth.com?', err)
 	}
 })
-
 
 // Computed — unread count and filtered/grouped list
 const unreadCount = computed(() => {

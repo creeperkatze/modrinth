@@ -34,7 +34,10 @@
 					>
 						{{ downloadCopied ? 'Copied!' : 'Copy download URL' }}
 					</button>
-					<ClipboardCopyIcon v-if="!downloadLoading && downloadUrl && !downloadCopied" class="shrink-0 text-secondary" />
+					<ClipboardCopyIcon
+						v-if="!downloadLoading && downloadUrl && !downloadCopied"
+						class="shrink-0 text-secondary"
+					/>
 					<CheckIcon v-else-if="downloadCopied" class="shrink-0 text-brand" />
 				</div>
 				<div class="details-list__item">
@@ -119,7 +122,8 @@ onMounted(async () => {
 	downloadLoading.value = true
 	try {
 		const versions = await useBaseFetch(`project/${projectSlug.value}/version?limit=1`)
-		const primaryFile = versions?.[0]?.files?.find((f: any) => f.primary) ?? versions?.[0]?.files?.[0]
+		const primaryFile =
+			versions?.[0]?.files?.find((f: any) => f.primary) ?? versions?.[0]?.files?.[0]
 		downloadUrl.value = primaryFile?.url ?? null
 	} catch {
 		downloadUrl.value = null
