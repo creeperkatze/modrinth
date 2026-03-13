@@ -69,7 +69,7 @@ pnpm ext:build:firefox
 
 ## 🤝 Contributing
 
-Contributions are always welcome! Open a pull request in the [creeperkatze/modrinth](https://github.com/creeperkatze/modrinth/tree/browser-extension) monorepo against `apps/browser-extension`, as described in the [Development](#-development) section.
+Contributions are always welcome! Open a pull request in the [creeperkatze/modrinth](https://github.com/creeperkatze/modrinth/tree/browser-extension) monorepo against `apps/browser-extension`, as described in the [Development](#‍-development) section.
 
 ## 📜 License
 
