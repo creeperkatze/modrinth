@@ -1,5 +1,5 @@
 <template>
-	<div class="card flex-card experimental-styles-within">
+	<div v-if="showTools" class="card flex-card experimental-styles-within">
 		<h2>Tools</h2>
 		<div class="details-list">
 			<div class="details-list__item">
@@ -11,7 +11,7 @@
 			</div>
 		</div>
 	</div>
-	<DependencyTree v-if="projectSlug" :project-slug="projectSlug" />
+	<DependencyTree v-if="showDependencies && projectSlug" :project-slug="projectSlug" />
 </template>
 
 <script setup lang="ts">
@@ -21,6 +21,8 @@ import DependencyTree from './DependencyTree.vue'
 
 const props = defineProps<{
 	pageUrl: string
+	showTools: boolean
+	showDependencies: boolean
 }>()
 
 const modfolioUrl = computed(

@@ -4,6 +4,7 @@ import { provideI18n } from '@modrinth/ui'
 import FooterBadge from '../components/FooterBadge.vue'
 import NotificationsIndicator from '../components/NotificationsIndicator.vue'
 import Sidebar from '../components/Sidebar.vue'
+import { loadSettings, DEFAULTS, type ExtensionSettings } from '../helpers/settings'
 import '../assets/tailwind.css'
 
 export default defineContentScript({
@@ -14,6 +15,28 @@ export default defineContentScript({
 	cssInjectionMode: 'manifest',
 
 	main() {
+		let settings: ExtensionSettings = { ...DEFAULTS }
+
+		loadSettings().then((s) => {
+			settings = s
+			scheduleInject()
+			scheduleInjectSidebar()
+		})
+
+		chrome.storage.onChanged.addListener((changes) => {
+			for (const [key, { newValue }] of Object.entries(changes)) {
+				;(settings as Record<string, unknown>)[key] = newValue
+			}
+			if ('showNotificationsIndicator' in changes) {
+				unmount()
+				if (settings.showNotificationsIndicator) scheduleInject()
+			}
+			if ('showToolsSidebar' in changes || 'showDependenciesSidebar' in changes) {
+				unmountSidebar()
+				scheduleInjectSidebar()
+			}
+		})
+
 		let container: HTMLElement | null = null
 		let currentApp: ReturnType<typeof createApp> | null = null
 
@@ -29,6 +52,7 @@ export default defineContentScript({
 		}
 
 		function inject() {
+			if (!settings.showNotificationsIndicator) return
 			// Already injected and container is still live — nothing to do.
 			if (container && document.contains(container)) return
 
@@ -197,6 +221,7 @@ export default defineContentScript({
 		}
 
 		function injectSidebar() {
+			if (!settings.showToolsSidebar && !settings.showDependenciesSidebar) return
 			if (sidebarContainer && document.contains(sidebarContainer)) return
 			unmountSidebar()
 
@@ -220,7 +245,13 @@ export default defineContentScript({
 			}
 
 			const pageUrl = window.location.href.split('?')[0].split('#')[0]
-			sidebarApp = createApp(h(Sidebar, { pageUrl }))
+			sidebarApp = createApp(
+				h(Sidebar, {
+					pageUrl,
+					showTools: settings.showToolsSidebar,
+					showDependencies: settings.showDependenciesSidebar,
+				}),
+			)
 			try {
 				sidebarApp.mount(sidebarContainer)
 			} catch {

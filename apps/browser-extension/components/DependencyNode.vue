@@ -5,7 +5,7 @@
 			:style="depth > 0 ? { paddingLeft: `${depth * 24}px` } : {}"
 		>
 			<button
-				v-if="depth < MAX_DEPTH"
+				v-if="depth < MAX_DEPTH && !(childrenLoaded && children.length === 0)"
 				class="flex size-[1em] shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-secondary hover:text-primary"
 				:aria-expanded="expanded"
 				:aria-label="expanded ? 'Collapse dependencies' : 'Expand dependencies'"
@@ -37,28 +37,21 @@
 			</a>
 
 			<span
-				class="shrink-0 rounded px-[5px] py-px text-[0.625rem] font-bold leading-[1.5]"
+				class="shrink-0 rounded-full border border-solid px-2 py-0.5 text-xs font-medium leading-none"
 				:class="badgeClass"
 			>
 				{{ typeLabel }}
 			</span>
 		</div>
 
-		<template v-if="expanded">
-			<ul v-if="children.length === 0" class="m-0 mt-3 flex list-none flex-col gap-3 p-0">
-				<li class="list-none text-secondary" :style="{ paddingLeft: `${(depth + 1) * 24}px` }">
-					No dependencies
-				</li>
-			</ul>
-			<ul v-else class="m-0 mt-3 flex list-none flex-col gap-3 p-0">
-				<DependencyNode
-					v-for="child in children"
-					:key="child.project_id ?? child.version_id"
-					:dep="child"
-					:depth="depth + 1"
-				/>
-			</ul>
-		</template>
+		<ul v-if="expanded" class="m-0 mt-3 flex list-none flex-col gap-3 p-0">
+			<DependencyNode
+				v-for="child in children"
+				:key="child.project_id ?? child.version_id"
+				:dep="child"
+				:depth="depth + 1"
+			/>
+		</ul>
 	</li>
 </template>
 
@@ -100,11 +93,11 @@ const typeLabel = computed(
 const badgeClass = computed(
 	() =>
 		({
-			required: 'bg-highlight text-brand',
-			optional: 'bg-button-bg text-secondary',
-			embedded: 'bg-highlight-blue text-blue',
-			incompatible: 'bg-highlight-red text-red',
-		})[props.dep.dependency_type] ?? 'bg-button-bg text-secondary',
+			required: 'bg-highlight border-highlight text-brand',
+			optional: 'bg-button-bg border-button-bg text-secondary',
+			embedded: 'bg-highlight-blue border-highlight-blue text-blue',
+			incompatible: 'bg-highlight-red border-highlight-red text-red',
+		})[props.dep.dependency_type] ?? 'bg-button-bg border-button-bg text-secondary',
 )
 
 function navigateToProject() {
@@ -124,6 +117,7 @@ async function toggle() {
 			childrenLoading.value = false
 			childrenLoaded.value = true
 		}
+		if (children.value.length === 0) return
 	}
 	expanded.value = !expanded.value
 }
