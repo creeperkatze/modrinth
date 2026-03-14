@@ -22,21 +22,23 @@ export default defineContentScript({
 		function getRouter() {
 			return (
 				w.__nuxt_app?.$router ??
-				(document.getElementById('__nuxt') as any)?.__vue_app__?.config
-					?.globalProperties?.$router ??
+				(document.getElementById('__nuxt') as any)?.__vue_app__?.config?.globalProperties
+					?.$router ??
 				null
 			)
 		}
 
-		window.addEventListener('modrinth-extras:navigate', ((e: CustomEvent) => {
-			const { path, fallbackUrl } = e.detail
+		window.addEventListener('message', (e: MessageEvent) => {
+			if (e.origin !== window.location.origin) return
+			if (e.data?.type !== 'modrinth-extras:navigate') return
+			const { path, fallbackUrl } = e.data
 			const router = getRouter()
 			if (router) {
 				router.push(path)
 			} else {
 				window.location.href = fallbackUrl
 			}
-		}) as EventListener)
+		})
 
 		function hookRouter(): boolean {
 			const router = getRouter()

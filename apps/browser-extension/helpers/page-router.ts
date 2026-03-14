@@ -11,7 +11,9 @@ export function resolveLink(link: string): string {
 	return window.location.origin + link
 }
 
-// Navigate using the page router (SPA) via the MAIN world bridge
+// Navigate using the page router (SPA) via the MAIN world bridge.
+// Uses postMessage instead of CustomEvent because Firefox's Xray
+// wrappers strip event.detail when crossing the ISOLATED → MAIN boundary.
 export function navigate(path: string): void {
 	if (path.startsWith('http')) {
 		try {
@@ -27,9 +29,8 @@ export function navigate(path: string): void {
 		}
 	}
 
-	window.dispatchEvent(
-		new CustomEvent('modrinth-extras:navigate', {
-			detail: { path, fallbackUrl: resolveLink(path) },
-		}),
+	window.postMessage(
+		{ type: 'modrinth-extras:navigate', path, fallbackUrl: resolveLink(path) },
+		window.location.origin,
 	)
 }

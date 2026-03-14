@@ -1,316 +1,274 @@
-import { createApp, h, ref } from 'vue'
-import FloatingVue from 'floating-vue'
 import { provideI18n } from '@modrinth/ui'
+import FloatingVue from 'floating-vue'
+import { createApp, h, ref, type App } from 'vue'
+import '../assets/tailwind.css'
 import FooterBadge from '../components/FooterBadge.vue'
 import NotificationsIndicator from '../components/NotificationsIndicator.vue'
 import Sidebar from '../components/Sidebar.vue'
-import { loadSettings, DEFAULTS, type ExtensionSettings } from '../helpers/settings'
-import '../assets/tailwind.css'
+import { DEFAULTS, loadSettings, type ExtensionSettings } from '../helpers/settings'
+
+// Debounce only during initial page load to avoid injecting during Nuxt
+// hydration. Once the first successful injection happens, the page is
+// considered hydrated and all further injections are immediate.
+const HYDRATION_DEBOUNCE_MS = 200
+let hydrated = false
+
+interface InjectionConfig {
+	id: string
+	isEnabled: () => boolean
+	settingsKeys: (keyof ExtensionSettings)[]
+	attach: (container: HTMLElement) => boolean
+	createApp: () => App
+	persistent: boolean
+}
+
+function createInjection(config: InjectionConfig) {
+	let container: HTMLElement | null = null
+	let app: App | null = null
+	let timer: ReturnType<typeof setTimeout> | null = null
+
+	function unmount() {
+		if (app) {
+			app.unmount()
+			app = null
+		}
+		if (container?.parentElement) {
+			container.parentElement.removeChild(container)
+		}
+		container = null
+	}
+
+	function inject() {
+		if (!config.isEnabled()) return
+		if (container && document.contains(container)) return
+		unmount()
+
+		const el = document.createElement('div')
+		el.id = config.id
+
+		if (!config.attach(el)) return
+
+		if (!document.contains(el)) return
+
+		const vueApp = config.createApp()
+		try {
+			vueApp.mount(el)
+			app = vueApp
+			container = el
+			hydrated = true
+			console.log(`[Modrinth Extras] Injected ${config.id}`)
+		} catch {
+			console.error(`[Modrinth Extras] Failed to mount ${config.id}`)
+			vueApp.unmount()
+			el.parentElement?.removeChild(el)
+		}
+	}
+
+	function schedule() {
+		if (hydrated) {
+			inject()
+			return
+		}
+		if (timer) clearTimeout(timer)
+		timer = setTimeout(() => {
+			timer = null
+			inject()
+		}, HYDRATION_DEBOUNCE_MS)
+	}
+
+	function checkDetached(): boolean {
+		if (container && !document.contains(container)) {
+			console.log(`[Modrinth Extras] Detached ${config.id}`)
+			unmount()
+			return true
+		}
+		return false
+	}
+
+	return { unmount, schedule, checkDetached, config }
+}
+
+function findSidebarAnchor(): { after: HTMLElement; fallback?: boolean } | null {
+	const path = window.location.pathname
+
+	if (/^\/(mod|plugin|datapack|shader|resourcepack|modpack)\/[^/]+\/?$/.test(path)) {
+		for (const card of document.querySelectorAll<HTMLElement>(
+			'.card.flex-card.experimental-styles-within',
+		)) {
+			if (card.querySelector('h2')?.textContent?.trim() === 'Details') return { after: card }
+		}
+		return null
+	}
+
+	if (/^\/user\/[^/]+\/?$/.test(path)) {
+		const sidebar = document.querySelector<HTMLElement>('.normal-page__sidebar')
+		if (!sidebar) return null
+		const cards = sidebar.querySelectorAll<HTMLElement>('.card.flex-card')
+		if (cards.length > 0) return { after: cards[cards.length - 1] }
+		return { after: sidebar, fallback: true }
+	}
+
+	if (/^\/organization\/[^/]+\/?$/.test(path)) {
+		const sidebar = document.querySelector<HTMLElement>('.normal-page__sidebar')
+		if (!sidebar) return null
+		const cards = sidebar.querySelectorAll<HTMLElement>('.card.flex-card')
+		if (cards.length > 0) return { after: cards[cards.length - 1] }
+		return null
+	}
+
+	if (/^\/collection\/[^/]+\/?$/.test(path)) {
+		const sidebar = document.querySelector<HTMLElement>('.ui-normal-page__sidebar')
+		if (!sidebar) return null
+		const cards = sidebar.querySelectorAll<HTMLElement>('.flex.flex-col.gap-3.p-4')
+		if (cards.length > 0) return { after: cards[cards.length - 1] }
+		return null
+	}
+
+	return null
+}
 
 export default defineContentScript({
 	matches: ['https://modrinth.com/*'],
-	// 'manifest' tells Chrome to auto-load the compiled CSS (Tailwind utilities,
-	// scoped @modrinth/ui component styles, floating-vue positioning CSS) as a
-	// content stylesheet before the script runs.
 	cssInjectionMode: 'manifest',
 
 	main() {
+		console.log('[Modrinth Extras] Content script loaded')
 		let settings: ExtensionSettings = { ...DEFAULTS }
+
+		const notifications = createInjection({
+			id: 'modrinth-extras-notifications',
+			isEnabled: () => settings.showNotificationsIndicator,
+			settingsKeys: ['showNotificationsIndicator'],
+			persistent: true,
+			attach(container) {
+				const header = document.querySelector('header')
+				if (!header) return false
+
+				const triggers = [...header.querySelectorAll<HTMLElement>('.btn-dropdown-animation')]
+				const userTrigger = triggers.findLast((el) => !!el.querySelector('img')) ?? null
+				if (!userTrigger) return false
+
+				let childInFlex: HTMLElement = userTrigger
+				let flexRow: HTMLElement | null = userTrigger.parentElement
+				while (flexRow && flexRow !== header) {
+					const { display } = window.getComputedStyle(flexRow)
+					if (display === 'flex' || display === 'inline-flex') break
+					childInFlex = flexRow
+					flexRow = flexRow.parentElement as HTMLElement | null
+				}
+				if (!flexRow) return false
+
+				container.style.display = 'flex'
+				container.style.alignItems = 'center'
+				flexRow.insertBefore(container, childInFlex)
+				return true
+			},
+			createApp() {
+				const app = createApp({
+					setup() {
+						provideI18n({
+							locale: ref('en-US'),
+							t: (key: string) => key,
+							setLocale: () => {},
+						})
+					},
+					render: () => h(NotificationsIndicator),
+				})
+				app.use(FloatingVue)
+				return app
+			},
+		})
+
+		const sidebar = createInjection({
+			id: 'modrinth-extras-sidebar-extra',
+			isEnabled: () => settings.showToolsSidebar || settings.showDependenciesSidebar,
+			settingsKeys: ['showToolsSidebar', 'showDependenciesSidebar'],
+			persistent: false,
+			attach(container) {
+				const anchor = findSidebarAnchor()
+				if (!anchor) return false
+
+				container.style.display = 'contents'
+				if (anchor.fallback) {
+					anchor.after.appendChild(container)
+				} else {
+					anchor.after.after(container)
+				}
+				return document.contains(container)
+			},
+			createApp() {
+				const pageUrl = window.location.href.split('?')[0].split('#')[0]
+				return createApp(
+					h(Sidebar, {
+						pageUrl,
+						showTools: settings.showToolsSidebar,
+						showDependencies: settings.showDependenciesSidebar,
+					}),
+				)
+			},
+		})
+
+		const footerBadge = createInjection({
+			id: 'modrinth-extras-footer-badge',
+			isEnabled: () => true,
+			settingsKeys: [],
+			persistent: true,
+			attach(container) {
+				const link = document.querySelector<HTMLAnchorElement>(
+					'footer a[href="https://github.com/modrinth/code"]',
+				)
+				if (!link) return false
+
+				const flexCol = link.closest('.flex.flex-wrap.justify-center.gap-3')
+				if (!flexCol) return false
+
+				container.style.display = 'flex'
+				container.style.flexDirection = 'column'
+				container.style.width = '100%'
+				flexCol.appendChild(container)
+				return true
+			},
+			createApp: () => createApp(h(FooterBadge)),
+		})
+
+		const injections = [notifications, sidebar, footerBadge]
 
 		loadSettings().then((s) => {
 			settings = s
-			scheduleInject()
-			scheduleInjectSidebar()
+			console.log('[Modrinth Extras] Settings loaded:', JSON.stringify(s))
+			for (const inj of injections) inj.schedule()
 		})
 
 		chrome.storage.onChanged.addListener((changes) => {
 			for (const [key, { newValue }] of Object.entries(changes)) {
 				;(settings as unknown as Record<string, unknown>)[key] = newValue
 			}
-			if ('showNotificationsIndicator' in changes) {
-				unmount()
-				if (settings.showNotificationsIndicator) scheduleInject()
-			}
-			if ('showToolsSidebar' in changes || 'showDependenciesSidebar' in changes) {
-				unmountSidebar()
-				scheduleInjectSidebar()
+			for (const inj of injections) {
+				if (inj.config.settingsKeys.some((k) => k in changes)) {
+					inj.unmount()
+					inj.schedule()
+				}
 			}
 		})
 
-		let container: HTMLElement | null = null
-		let currentApp: ReturnType<typeof createApp> | null = null
-
-		function unmount() {
-			if (currentApp) {
-				currentApp.unmount()
-				currentApp = null
-			}
-			if (container?.parentElement) {
-				container.parentElement.removeChild(container)
-			}
-			container = null
-		}
-
-		function inject() {
-			if (!settings.showNotificationsIndicator) return
-			// Already injected and container is still live — nothing to do.
-			if (container && document.contains(container)) return
-
-			// Clean up any previous app whose container was detached.
-			unmount()
-
-			const header = document.querySelector('header')
-			if (!header) return
-
-			// Find the user avatar button: a .btn-dropdown-animation that contains an
-			// img element (the avatar). This is only present when signed in, so we
-			// return early when the user is not yet authenticated and rely on the
-			// MutationObserver to retry when the avatar appears in the DOM.
-			const dropdownTriggers = [
-				...header.querySelectorAll<HTMLElement>('.btn-dropdown-animation'),
-			]
-			const userTrigger: HTMLElement | null =
-				dropdownTriggers.findLast((el) => !!el.querySelector('img')) ?? null
-
-			if (!userTrigger) return
-
-			// Walk UP from the trigger button until we reach a flex ancestor.
-			let childInFlex: HTMLElement = userTrigger
-			let flexRow: HTMLElement | null = userTrigger.parentElement
-			while (flexRow && flexRow !== header) {
-				const { display } = window.getComputedStyle(flexRow)
-				if (display === 'flex' || display === 'inline-flex') break
-				childInFlex = flexRow
-				flexRow = flexRow.parentElement as HTMLElement | null
-			}
-
-			if (!flexRow) return
-
-			container = document.createElement('div')
-			container.id = 'modrinth-extras-notifications'
-			container.style.display = 'flex'
-			container.style.alignItems = 'center'
-			flexRow.insertBefore(container, childInFlex)
-
-			const app = createApp({
-				setup() {
-					provideI18n({ locale: ref('en-US'), t: (key: string) => key, setLocale: () => {} })
-				},
-				render: () => h(NotificationsIndicator),
-			})
-			app.use(FloatingVue)
-			try {
-				app.mount(container)
-				currentApp = app
-			} catch {
-				unmount()
-			}
-		}
-
-		// Debounce helper — waits for DOM activity to settle before injecting.
-		let debounceTimer: ReturnType<typeof setTimeout> | null = null
-		function scheduleInject() {
-			if (debounceTimer) clearTimeout(debounceTimer)
-			debounceTimer = setTimeout(() => {
-				debounceTimer = null
-				inject()
-			}, 300)
-		}
-
-		// Listen for router lifecycle events from the MAIN world bridge script.
-		// Only tear down page-specific components (sidebar) on navigation.
-		// The header notification indicator persists across SPA navigations —
-		// the MutationObserver handles the rare case where Nuxt removes the
-		// header entirely (layout change).
 		window.addEventListener('modrinth-extras:before-navigate', () => {
-			unmountSidebar()
+			for (const inj of injections) {
+				if (!inj.config.persistent) inj.unmount()
+			}
 		})
+
 		window.addEventListener('modrinth-extras:after-navigate', () => {
-			scheduleInject()
-			scheduleInjectSidebar()
+			for (const inj of injections) inj.schedule()
 		})
 
-		scheduleInject()
-
-		// Safety-net MutationObserver: if the container is removed from the DOM
-		// by anything OTHER than our beforeEach hook (e.g. Nuxt re-rendering the
-		// header during hydration), unmount the Vue app IMMEDIATELY so it stops
-		// trying to write to a detached DOM tree, then schedule re-injection.
-		//
-		// Do NOT disconnect on success — we must keep watching for future removals.
 		const domObserver = new MutationObserver(() => {
-			if (container && !document.contains(container)) {
-				unmount()
+			for (const inj of injections) {
+				inj.checkDetached()
+				inj.schedule()
 			}
-			if (footerContainer && !document.contains(footerContainer)) {
-				unmountFooter()
-			}
-			if (sidebarContainer && !document.contains(sidebarContainer)) {
-				unmountSidebar()
-			}
-			scheduleInject()
-			scheduleInjectFooterBadge()
-			scheduleInjectSidebar()
 		})
 		domObserver.observe(document.documentElement, { childList: true, subtree: true })
 
-		let sidebarContainer: HTMLElement | null = null
-		let sidebarApp: ReturnType<typeof createApp> | null = null
-
-		function unmountSidebar() {
-			if (sidebarApp) {
-				sidebarApp.unmount()
-				sidebarApp = null
-			}
-			if (sidebarContainer?.parentElement) {
-				sidebarContainer.parentElement.removeChild(sidebarContainer)
-			}
-			sidebarContainer = null
-		}
-
-		function findAnchorElement(): { after: HTMLElement; fallback?: boolean } | null {
-			const path = window.location.pathname
-
-			if (/^\/(mod|plugin|datapack|shader|resourcepack|modpack)\/[^/]+\/?$/.test(path)) {
-				// Project page: after the "Details" card.
-				for (const card of document.querySelectorAll<HTMLElement>(
-					'.card.flex-card.experimental-styles-within',
-				)) {
-					if (card.querySelector('h2')?.textContent?.trim() === 'Details')
-						return { after: card }
-				}
-				return null
-			}
-
-			if (/^\/user\/[^/]+\/?$/.test(path)) {
-				// User profile page: after the last .card.flex-card, or append to sidebar if none.
-				const sidebar = document.querySelector<HTMLElement>('.normal-page__sidebar')
-				if (!sidebar) return null
-				const cards = sidebar.querySelectorAll<HTMLElement>('.card.flex-card')
-				if (cards.length > 0) return { after: cards[cards.length - 1] }
-				return { after: sidebar, fallback: true }
-			}
-
-			if (/^\/organization\/[^/]+\/?$/.test(path)) {
-				// Organization page: after the "Members" card.
-				const sidebar = document.querySelector<HTMLElement>('.normal-page__sidebar')
-				if (!sidebar) return null
-				const cards = sidebar.querySelectorAll<HTMLElement>('.card.flex-card')
-				if (cards.length > 0) return { after: cards[cards.length - 1] }
-				return null
-			}
-
-			if (/^\/collection\/[^/]+\/?$/.test(path)) {
-				// Collection page uses SidebarCard (div.flex.flex-col.gap-3.p-4).
-				const sidebar = document.querySelector<HTMLElement>('.ui-normal-page__sidebar')
-				if (!sidebar) return null
-				const cards = sidebar.querySelectorAll<HTMLElement>('.flex.flex-col.gap-3.p-4')
-				if (cards.length > 0) return { after: cards[cards.length - 1] }
-				return null
-			}
-
-			return null
-		}
-
-		function injectSidebar() {
-			if (!settings.showToolsSidebar && !settings.showDependenciesSidebar) return
-			if (sidebarContainer && document.contains(sidebarContainer)) return
-			unmountSidebar()
-
-			const anchor = findAnchorElement()
-			if (!anchor) return
-
-			sidebarContainer = document.createElement('div')
-			sidebarContainer.id = 'modrinth-extras-sidebar-extra'
-			sidebarContainer.style.display = 'contents'
-			if (anchor.fallback) {
-				anchor.after.appendChild(sidebarContainer)
-			} else {
-				anchor.after.after(sidebarContainer)
-			}
-
-			// Guard: the anchor may have been removed by Nuxt's DOM patching
-			// between when we found it and now.
-			if (!document.contains(sidebarContainer)) {
-				sidebarContainer = null
-				return
-			}
-
-			const pageUrl = window.location.href.split('?')[0].split('#')[0]
-			sidebarApp = createApp(
-				h(Sidebar, {
-					pageUrl,
-					showTools: settings.showToolsSidebar,
-					showDependencies: settings.showDependenciesSidebar,
-				}),
-			)
-			try {
-				sidebarApp.mount(sidebarContainer)
-			} catch {
-				unmountSidebar()
-			}
-		}
-
-		let sidebarDebounce: ReturnType<typeof setTimeout> | null = null
-		function scheduleInjectSidebar() {
-			if (sidebarDebounce) clearTimeout(sidebarDebounce)
-			sidebarDebounce = setTimeout(() => {
-				sidebarDebounce = null
-				injectSidebar()
-			}, 300)
-		}
-
-		scheduleInjectSidebar()
-
-		let footerContainer: HTMLElement | null = null
-		let footerApp: ReturnType<typeof createApp> | null = null
-		let footerDebounce: ReturnType<typeof setTimeout> | null = null
-		function scheduleInjectFooterBadge() {
-			if (footerDebounce) clearTimeout(footerDebounce)
-			footerDebounce = setTimeout(() => {
-				footerDebounce = null
-				injectFooterBadge()
-			}, 300)
-		}
-
-		function unmountFooter() {
-			if (footerApp) {
-				footerApp.unmount()
-				footerApp = null
-			}
-			if (footerContainer?.parentElement) {
-				footerContainer.parentElement.removeChild(footerContainer)
-			}
-			footerContainer = null
-		}
-
-		function injectFooterBadge() {
-			if (footerContainer && document.contains(footerContainer)) return
-			unmountFooter()
-
-			const openSourceLink = document.querySelector<HTMLAnchorElement>(
-				'footer a[href="https://github.com/modrinth/code"]',
-			)
-			if (!openSourceLink) return
-
-			const flexCol = openSourceLink.closest('.flex.flex-wrap.justify-center.gap-3')
-			if (!flexCol) return
-
-			footerContainer = document.createElement('div')
-			footerContainer.id = 'modrinth-extras-footer-badge'
-			footerContainer.style.display = 'flex'
-			footerContainer.style.flexDirection = 'column'
-			footerContainer.style.width = '100%'
-			flexCol.appendChild(footerContainer)
-
-			footerApp = createApp(h(FooterBadge))
-			try {
-				footerApp.mount(footerContainer)
-			} catch {
-				unmountFooter()
-			}
-		}
-
-		scheduleInjectFooterBadge()
+		for (const inj of injections) inj.schedule()
 	},
 })
