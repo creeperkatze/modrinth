@@ -4,7 +4,7 @@
 		href="https://github.com/creeperkatze/modrinth-extras"
 		target="_blank"
 		rel="noopener"
-		class="m-0 flex items-center gap-1 no-underline hover:underline"
+		class="mt-2 flex items-center gap-1 no-underline hover:underline"
 	>
 		<ExtLogo aria-hidden="true" class="h-4 w-4" />
 		Modrinth Extras {{ version }}

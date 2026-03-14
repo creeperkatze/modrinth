@@ -1,5 +1,5 @@
 <template>
-	<ButtonStyled v-if="userId" type="transparent">
+	<ButtonStyled v-if="userId !== false" type="transparent">
 		<OverflowMenu
 			ref="notificationsOverflow"
 			:dropdown-id="effectiveDropdownId"
@@ -240,7 +240,7 @@ import {
 } from '@modrinth/ui'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
-import { useBaseFetch } from '../composables/useBaseFetch'
+import { invalidateTokenCache, useBaseFetch } from '../composables/useBaseFetch'
 import { navigate, resolveLink } from '../helpers/page-router'
 import {
 	fetchExtraNotificationData,
@@ -283,8 +283,8 @@ const effectiveDropdownId = computed(
 	() => props.dropdownId || `notifications-dropdown-${instanceId}`,
 )
 
-// Auth — populated on mount by fetching /v2/user with the cookie token
-const userId = ref<string | null>(null)
+// Auth state: null = loading, false = not signed in, string = signed in
+const userId = ref<string | null | false>(null)
 
 // Notifications data
 const notificationsData = ref<PlatformNotification[] | null>(null)
@@ -299,13 +299,24 @@ async function refreshNotifications() {
 	}
 }
 
-onMounted(async () => {
+function hasAuthCookie(): boolean {
+	return document.cookie.split('; ').some((row) => row.startsWith('auth-token='))
+}
+
+async function tryAuth(): Promise<boolean> {
 	try {
 		const user = await useBaseFetch('user')
 		userId.value = user.id
 		await refreshNotifications()
-	} catch (err) {
-		console.error('[Modrinth Ext] Auth failed — are you logged in to modrinth.com?', err)
+		return true
+	} catch {
+		return false
+	}
+}
+
+onMounted(async () => {
+	if (!(await tryAuth())) {
+		userId.value = false
 	}
 })
 
@@ -348,18 +359,32 @@ function goToPage(page: number) {
 	}
 }
 
-// Auto-refresh every minute
-const REFRESH_INTERVAL = 60_000
 const notificationsOverflow = ref<InstanceType<typeof OverflowMenu> | null>(null)
+let authWatchInterval: ReturnType<typeof setInterval> | null = null
 let refreshInterval: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => {
+	// Watches cookie, signs in when cookie appears, signs out when it disappears
+	// API calls only happen on transitions (cookie absent→present), so it's cheap
+	authWatchInterval = setInterval(async () => {
+		const cookie = hasAuthCookie()
+		if (userId.value && !cookie) {
+			invalidateTokenCache()
+			userId.value = false
+			notificationsData.value = null
+		} else if (!userId.value && cookie) {
+			invalidateTokenCache()
+			await tryAuth()
+		}
+	}, 1_000)
+
 	refreshInterval = setInterval(() => {
-		if (notificationsOverflow.value) refreshNotifications()
-	}, REFRESH_INTERVAL)
+		if (userId.value) refreshNotifications()
+	}, 60_000)
 })
 
 onBeforeUnmount(() => {
+	if (authWatchInterval) clearInterval(authWatchInterval)
 	if (refreshInterval) clearInterval(refreshInterval)
 })
 
@@ -385,7 +410,7 @@ async function handleDeclineInvite(notif: PlatformNotification) {
 		}
 		await removeSelfFromTeam(
 			(notif.body as PlatformNotificationBody).team_id as string,
-			userId.value!,
+			userId.value as string,
 		)
 		markAsRead([notif.id]).catch((err) => console.error('Error marking as read:', err))
 	} catch (err) {

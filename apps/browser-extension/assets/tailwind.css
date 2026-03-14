@@ -1,1 +1,3 @@
-@tailwind utilities;
+@layer modrinth-extras {
+	@tailwind utilities;
+}

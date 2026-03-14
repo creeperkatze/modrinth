@@ -28,7 +28,7 @@ export function navigate(path: string): void {
 	}
 
 	window.dispatchEvent(
-		new CustomEvent('modrinth-ext:navigate', {
+		new CustomEvent('modrinth-extras:navigate', {
 			detail: { path, fallbackUrl: resolveLink(path) },
 		}),
 	)

@@ -7,7 +7,7 @@
  *
  *  - Hooks into the Nuxt router lifecycle (beforeEach / afterEach) and
  *    dispatches CustomEvents so the ISOLATED script can react.
- *  - Listens for `modrinth-ext:navigate` events and calls `router.push()`
+ *  - Listens for `modrinth-extras:navigate` events and calls `router.push()`
  *    for true client-side SPA navigation.
  */
 export default defineContentScript({
@@ -28,7 +28,7 @@ export default defineContentScript({
 			)
 		}
 
-		window.addEventListener('modrinth-ext:navigate', ((e: CustomEvent) => {
+		window.addEventListener('modrinth-extras:navigate', ((e: CustomEvent) => {
 			const { path, fallbackUrl } = e.detail
 			const router = getRouter()
 			if (router) {
@@ -43,13 +43,13 @@ export default defineContentScript({
 			if (!router) return false
 
 			router.beforeEach(() => {
-				window.dispatchEvent(new CustomEvent('modrinth-ext:before-navigate'))
+				window.dispatchEvent(new CustomEvent('modrinth-extras:before-navigate'))
 			})
 			router.afterEach(() => {
-				window.dispatchEvent(new CustomEvent('modrinth-ext:after-navigate'))
+				window.dispatchEvent(new CustomEvent('modrinth-extras:after-navigate'))
 			})
 
-			window.dispatchEvent(new CustomEvent('modrinth-ext:router-ready'))
+			window.dispatchEvent(new CustomEvent('modrinth-extras:router-ready'))
 			return true
 		}
 

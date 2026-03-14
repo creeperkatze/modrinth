@@ -25,7 +25,7 @@ export default defineContentScript({
 
 		chrome.storage.onChanged.addListener((changes) => {
 			for (const [key, { newValue }] of Object.entries(changes)) {
-				;(settings as Record<string, unknown>)[key] = newValue
+				;(settings as unknown as Record<string, unknown>)[key] = newValue
 			}
 			if ('showNotificationsIndicator' in changes) {
 				unmount()
@@ -62,22 +62,15 @@ export default defineContentScript({
 			const header = document.querySelector('header')
 			if (!header) return
 
-			// Find the user menu trigger button. Strategy:
-			// 1. Look for .btn-dropdown-animation buttons (applied by @modrinth/ui's
-			//    OverflowMenu via $attrs from the class prop in default.vue).
-			// 2. Fall back to any header button that contains an img (user avatar).
+			// Find the user avatar button: a .btn-dropdown-animation that contains an
+			// img element (the avatar). This is only present when signed in, so we
+			// return early when the user is not yet authenticated and rely on the
+			// MutationObserver to retry when the avatar appears in the DOM.
 			const dropdownTriggers = [
 				...header.querySelectorAll<HTMLElement>('.btn-dropdown-animation'),
 			]
-			let userTrigger: HTMLElement | null = dropdownTriggers[dropdownTriggers.length - 1] ?? null
-
-			if (!userTrigger) {
-				const headerButtons = [...header.querySelectorAll<HTMLElement>('button')]
-				userTrigger =
-					headerButtons.filter((b) => b.querySelector('img')).at(-1) ??
-					headerButtons.at(-1) ??
-					null
-			}
+			const userTrigger: HTMLElement | null =
+				dropdownTriggers.findLast((el) => !!el.querySelector('img')) ?? null
 
 			if (!userTrigger) return
 
@@ -94,10 +87,9 @@ export default defineContentScript({
 			if (!flexRow) return
 
 			container = document.createElement('div')
-			container.id = 'modrinth-ext-notifications'
-			// display:contents makes the container invisible to flex layout —
-			// the Vue component's root element becomes the effective flex item.
-			container.style.display = 'contents'
+			container.id = 'modrinth-extras-notifications'
+			container.style.display = 'flex'
+			container.style.alignItems = 'center'
 			flexRow.insertBefore(container, childInFlex)
 
 			const app = createApp({
@@ -130,10 +122,10 @@ export default defineContentScript({
 		// The header notification indicator persists across SPA navigations —
 		// the MutationObserver handles the rare case where Nuxt removes the
 		// header entirely (layout change).
-		window.addEventListener('modrinth-ext:before-navigate', () => {
+		window.addEventListener('modrinth-extras:before-navigate', () => {
 			unmountSidebar()
 		})
-		window.addEventListener('modrinth-ext:after-navigate', () => {
+		window.addEventListener('modrinth-extras:after-navigate', () => {
 			scheduleInject()
 			scheduleInjectSidebar()
 		})
@@ -149,7 +141,6 @@ export default defineContentScript({
 		const domObserver = new MutationObserver(() => {
 			if (container && !document.contains(container)) {
 				unmount()
-				scheduleInject()
 			}
 			if (footerContainer && !document.contains(footerContainer)) {
 				unmountFooter()
@@ -157,6 +148,7 @@ export default defineContentScript({
 			if (sidebarContainer && !document.contains(sidebarContainer)) {
 				unmountSidebar()
 			}
+			scheduleInject()
 			scheduleInjectFooterBadge()
 			scheduleInjectSidebar()
 		})
@@ -229,7 +221,7 @@ export default defineContentScript({
 			if (!anchor) return
 
 			sidebarContainer = document.createElement('div')
-			sidebarContainer.id = 'modrinth-ext-sidebar-extra'
+			sidebarContainer.id = 'modrinth-extras-sidebar-extra'
 			sidebarContainer.style.display = 'contents'
 			if (anchor.fallback) {
 				anchor.after.appendChild(sidebarContainer)
@@ -305,8 +297,10 @@ export default defineContentScript({
 			if (!flexCol) return
 
 			footerContainer = document.createElement('div')
-			footerContainer.id = 'modrinth-ext-footer-badge'
-			footerContainer.style.display = 'contents'
+			footerContainer.id = 'modrinth-extras-footer-badge'
+			footerContainer.style.display = 'flex'
+			footerContainer.style.flexDirection = 'column'
+			footerContainer.style.width = '100%'
 			flexCol.appendChild(footerContainer)
 
 			footerApp = createApp(h(FooterBadge))
