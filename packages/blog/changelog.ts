@@ -11,6 +11,109 @@ export type VersionEntry = {
 
 const VERSIONS: VersionEntry[] = [
 	{
+		date: `2026-05-11T20:16:06+00:00`,
+		product: 'app',
+		version: '0.13.15',
+		body: `## Changed
+- Updated translations.
+
+## Fixed
+- Fixed app launch speed being dramatically slowed by having lots of instances.`,
+	},
+	{
+		date: `2026-05-11T20:16:06+00:00`,
+		product: 'web',
+		body: `## Changed
+- Updated translations.
+
+## Fixed
+- Fixed NeoForge version inferring on Minecraft versions 26.1 and newer.
+- Improved how NeoForge Minecraft versions are inferred to support more cases.`,
+	},
+	{
+		date: `2026-05-11T20:16:06+00:00`,
+		product: 'hosting',
+		body: `## Changed
+- Updated translations.`,
+	},
+	{
+		date: `2026-05-09T21:42:48+00:00`,
+		product: 'app',
+		version: '0.13.14',
+		body: `## Fixed
+- Fixed hidden files showing up in the Content tab on instances.
+- Fixed 'Advanced rendering' option not being applied to most of the interface.`,
+	},
+	{
+		date: `2026-05-09T21:42:48+00:00`,
+		product: 'hosting',
+		body: `## Changed
+- Improved stability of content install flow.
+
+## Fixed
+- Fixed content install flow breaking if you refresh the page mid-install.`,
+	},
+	{
+		date: `2026-05-09T19:06:18+00:00`,
+		product: 'app',
+		version: '0.13.13',
+		body: `## Changed
+- Improved the Browse page header so the back button no longer shifts the layout.
+
+## Fixed
+- Fixed instance redirects opening a broken page state.`,
+	},
+	{
+		date: `2026-05-09T19:06:18+00:00`,
+		product: 'web',
+		body: `## Changed
+- Improved performance on search pages.`,
+	},
+	{
+		date: `2026-05-09T19:06:18+00:00`,
+		product: 'hosting',
+		body: `## Changed
+- Updated Modrinth Hosting content browsing so multiple projects can be selected before installation.
+- After installing selected content, the Modrinth Hosting content page now reopens immediately and shows pending projects as installing.
+- Project icons now appear in the action bar when selecting multiple projects in the Content tab.
+
+## Fixed
+- Fixed selected content and dependencies not staying marked as installing.
+- Fixed page shifts while dependencies resolve during installation.`,
+	},
+	{
+		date: `2026-05-08T09:58:39+00:00`,
+		product: 'web',
+		body: `## Fixed
+- Fixed some buttons appearing as disabled even when they weren't, such as the project icon settings.`,
+	},
+	{
+		date: `2026-05-08T02:24:09+00:00`,
+		product: 'app',
+		version: '0.13.12',
+		body: `## Changed
+- Updated the modpack exporting experience, fixing issues with it and excluding /mods/.connector from the exports.
+
+## Fixed
+- Fixed page width changing based on if there is scrollable content or not, causing things to move when you switch tabs between scrollable and non-scrollable content.`,
+	},
+	{
+		date: `2026-05-08T02:24:09+00:00`,
+		product: 'hosting',
+		body: `## Fixed
+- Fixed failed \`mrpack\` uploads when uploading via the Modrinth App.
+- Fixed support bubble being broken when the console is in full screen/expand mode.`,
+	},
+	{
+		date: `2026-05-08T02:24:09+00:00`,
+		product: 'web',
+		body: `## Changed
+- Project pages now have canonical permalink URLs to hopefully optimize SEO a bit.
+
+## Fixed
+- Fixed error around editing org member permissions.`,
+	},
+	{
 		date: `2026-05-06T22:11:04+00:00`,
 		product: 'app',
 		version: '0.13.11',
