@@ -101,7 +101,7 @@ const messages = defineMessages({
 			:options="sortOptions"
 			:class="
 				ctx.variant === 'web'
-					? '!w-auto flex-grow md:flex-grow-0'
+					? '!w-[16rem] min-w-max max-w-full flex-grow md:flex-grow-0'
 					: '!w-[16rem] min-w-max max-w-full'
 			"
 			@update:model-value="(val: SortType) => (ctx.effectiveCurrentSortType.value = val)"
@@ -118,7 +118,7 @@ const messages = defineMessages({
 			:options="maxResultsOptions"
 			:class="
 				ctx.variant === 'web'
-					? '!w-auto flex-grow md:flex-grow-0'
+					? '!w-[9rem] min-w-max max-w-full flex-grow md:flex-grow-0'
 					: '!w-[9rem] min-w-max max-w-full'
 			"
 			:placeholder="formatMessage(commonMessages.viewLabel)"
