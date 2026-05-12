@@ -99,7 +99,7 @@ const messages = defineMessages({
 		<Combobox
 			:model-value="ctx.effectiveCurrentSortType.value"
 			:options="sortOptions"
-			:class="ctx.variant === 'web' ? '!w-auto flex-grow md:flex-grow-0' : 'max-w-[16rem]'"
+			:class="ctx.variant === 'web' ? '!w-auto flex-grow md:flex-grow-0' : '!w-auto max-w-full'"
 			@update:model-value="(val: SortType) => (ctx.effectiveCurrentSortType.value = val)"
 		>
 			<template #prefix>
@@ -112,7 +112,7 @@ const messages = defineMessages({
 		<Combobox
 			:model-value="ctx.maxResults.value"
 			:options="maxResultsOptions"
-			:class="ctx.variant === 'web' ? '!w-auto flex-grow md:flex-grow-0' : 'max-w-[9rem]'"
+			:class="ctx.variant === 'web' ? '!w-auto flex-grow md:flex-grow-0' : '!w-auto max-w-full'"
 			:placeholder="formatMessage(commonMessages.viewLabel)"
 			@update:model-value="(val: number) => (ctx.maxResults.value = val)"
 		>
