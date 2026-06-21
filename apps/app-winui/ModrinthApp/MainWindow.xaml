@@ -1,0 +1,77 @@
+<Window
+	x:Class="ModrinthApp.MainWindow"
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	Title="Modrinth">
+
+	<!-- Mica backdrop — requires Windows 11 -->
+	<Window.SystemBackdrop>
+		<MicaBackdrop Kind="Base" />
+	</Window.SystemBackdrop>
+
+	<NavigationView
+		x:Name="NavView"
+		PaneDisplayMode="Left"
+		IsBackButtonVisible="Collapsed"
+		IsSettingsVisible="True"
+		OpenPaneLength="220"
+		CompactModeThresholdWidth="768"
+		ExpandedModeThresholdWidth="1024"
+		SelectionChanged="NavView_SelectionChanged"
+		Loaded="NavView_Loaded">
+
+		<NavigationView.PaneHeader>
+			<StackPanel Orientation="Horizontal" Spacing="10" Margin="12 6 12 8">
+				<Border
+					Width="28"
+					Height="28"
+					CornerRadius="6"
+					Background="{StaticResource ModrinthGreenBrush}">
+					<!-- Placeholder for Modrinth logo -->
+					<FontIcon Glyph="&#xE7FC;" FontSize="16" Foreground="White" />
+				</Border>
+				<TextBlock
+					Text="Modrinth"
+					Style="{StaticResource SubtitleTextBlockStyle}"
+					VerticalAlignment="Center" />
+			</StackPanel>
+		</NavigationView.PaneHeader>
+
+		<NavigationView.MenuItems>
+			<NavigationViewItem Tag="home" Content="Home">
+				<NavigationViewItem.Icon>
+					<FontIcon Glyph="&#xE80F;" />
+				</NavigationViewItem.Icon>
+			</NavigationViewItem>
+
+			<NavigationViewItem Tag="library" Content="Library">
+				<NavigationViewItem.Icon>
+					<FontIcon Glyph="&#xE8B7;" />
+				</NavigationViewItem.Icon>
+			</NavigationViewItem>
+
+			<NavigationViewItem Tag="browse" Content="Browse">
+				<NavigationViewItem.Icon>
+					<FontIcon Glyph="&#xE721;" />
+				</NavigationViewItem.Icon>
+			</NavigationViewItem>
+
+			<NavigationViewItemSeparator />
+
+			<NavigationViewItem Tag="worlds" Content="Worlds">
+				<NavigationViewItem.Icon>
+					<FontIcon Glyph="&#xECAA;" />
+				</NavigationViewItem.Icon>
+			</NavigationViewItem>
+
+			<NavigationViewItem Tag="skins" Content="Skins">
+				<NavigationViewItem.Icon>
+					<FontIcon Glyph="&#xE77B;" />
+				</NavigationViewItem.Icon>
+			</NavigationViewItem>
+		</NavigationView.MenuItems>
+
+		<!-- Main content frame — pages navigate into here -->
+		<Frame x:Name="ContentFrame" IsNavigationStackEnabled="True" />
+	</NavigationView>
+</Window>

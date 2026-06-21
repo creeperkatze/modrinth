@@ -1,0 +1,155 @@
+<Page
+	x:Class="ModrinthApp.Pages.HomePage"
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:models="using:ModrinthApp.Models"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	mc:Ignorable="d">
+
+	<ScrollViewer>
+		<StackPanel Padding="28 20 28 32" Spacing="32">
+
+			<!-- Recent instances -->
+			<StackPanel Spacing="12">
+				<TextBlock Text="Recently Played" Style="{StaticResource SubtitleTextBlockStyle}" />
+
+				<ScrollViewer
+					HorizontalScrollMode="Enabled"
+					VerticalScrollMode="Disabled"
+					HorizontalScrollBarVisibility="Auto"
+					VerticalScrollBarVisibility="Hidden">
+					<ItemsRepeater ItemsSource="{x:Bind RecentInstances}">
+						<ItemsRepeater.Layout>
+							<StackLayout Orientation="Horizontal" Spacing="12" />
+						</ItemsRepeater.Layout>
+						<ItemsRepeater.ItemTemplate>
+							<DataTemplate x:DataType="models:Instance">
+								<Border
+									Width="170"
+									CornerRadius="8"
+									Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+									BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+									BorderThickness="1">
+									<Grid>
+										<Grid.RowDefinitions>
+											<RowDefinition Height="90" />
+											<RowDefinition Height="Auto" />
+										</Grid.RowDefinitions>
+
+										<!-- Icon placeholder -->
+										<Border CornerRadius="8 8 0 0">
+											<Border.Background>
+												<SolidColorBrush Color="{x:Bind LoaderColor}" />
+											</Border.Background>
+											<FontIcon
+												Glyph="&#xE7FC;"
+												FontSize="38"
+												Foreground="White"
+												HorizontalAlignment="Center"
+												VerticalAlignment="Center" />
+										</Border>
+
+										<StackPanel Grid.Row="1" Padding="12 10 12 12" Spacing="2">
+											<TextBlock
+												Text="{x:Bind Name}"
+												FontWeight="SemiBold"
+												TextTrimming="CharacterEllipsis"
+												MaxLines="1" />
+											<TextBlock
+												Text="{x:Bind GameVersion}"
+												Style="{StaticResource CaptionTextBlockStyle}"
+												Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+											<TextBlock
+												Text="{x:Bind Loader}"
+												Style="{StaticResource CaptionTextBlockStyle}"
+												Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+											<Button
+												Content="Play"
+												HorizontalAlignment="Stretch"
+												Margin="0 8 0 0"
+												Style="{StaticResource AccentButtonStyle}" />
+										</StackPanel>
+									</Grid>
+								</Border>
+							</DataTemplate>
+						</ItemsRepeater.ItemTemplate>
+					</ItemsRepeater>
+				</ScrollViewer>
+			</StackPanel>
+
+			<!-- Featured modpacks -->
+			<StackPanel Spacing="12">
+				<Grid>
+					<TextBlock
+						Text="Featured Modpacks"
+						Style="{StaticResource SubtitleTextBlockStyle}"
+						VerticalAlignment="Center" />
+					<HyperlinkButton
+						Content="Browse all  →"
+						HorizontalAlignment="Right"
+						VerticalAlignment="Center"
+						Click="BrowseAll_Click" />
+				</Grid>
+
+				<ItemsRepeater ItemsSource="{x:Bind FeaturedModpacks}">
+					<ItemsRepeater.Layout>
+						<UniformGridLayout
+							MinItemWidth="280"
+							MinColumnSpacing="12"
+							MinRowSpacing="12" />
+					</ItemsRepeater.Layout>
+					<ItemsRepeater.ItemTemplate>
+						<DataTemplate x:DataType="models:Project">
+							<Border
+								CornerRadius="8"
+								Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+								BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+								BorderThickness="1"
+								Padding="16">
+								<Grid ColumnSpacing="14">
+									<Grid.ColumnDefinitions>
+										<ColumnDefinition Width="44" />
+										<ColumnDefinition Width="*" />
+									</Grid.ColumnDefinitions>
+
+									<Border
+										Width="44"
+										Height="44"
+										CornerRadius="8"
+										Background="{ThemeResource AccentFillColorDefaultBrush}">
+										<FontIcon
+											Glyph="&#xE7FC;"
+											FontSize="22"
+											Foreground="White"
+											HorizontalAlignment="Center"
+											VerticalAlignment="Center" />
+									</Border>
+
+									<StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+										<TextBlock
+											Text="{x:Bind Title}"
+											FontWeight="SemiBold"
+											TextTrimming="CharacterEllipsis"
+											MaxLines="1" />
+										<TextBlock
+											Text="{x:Bind Description}"
+											Style="{StaticResource CaptionTextBlockStyle}"
+											Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+											TextTrimming="CharacterEllipsis"
+											MaxLines="2" />
+										<TextBlock
+											Text="{x:Bind DownloadsFormatted}"
+											Style="{StaticResource CaptionTextBlockStyle}"
+											Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+									</StackPanel>
+								</Grid>
+							</Border>
+						</DataTemplate>
+					</ItemsRepeater.ItemTemplate>
+				</ItemsRepeater>
+			</StackPanel>
+
+		</StackPanel>
+	</ScrollViewer>
+</Page>
