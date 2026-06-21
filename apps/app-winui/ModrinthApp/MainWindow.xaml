@@ -150,23 +150,9 @@
 					</NavigationViewItem.Icon>
 				</NavigationViewItem>
 
-				<NavigationViewItem Tag="library" Content="Library">
-					<NavigationViewItem.Icon>
-						<FontIcon Glyph="&#xE8B7;" />
-					</NavigationViewItem.Icon>
-				</NavigationViewItem>
-
-				<NavigationViewItem Tag="browse" Content="Browse">
+				<NavigationViewItem Tag="discover" Content="Discover">
 					<NavigationViewItem.Icon>
 						<FontIcon Glyph="&#xE721;" />
-					</NavigationViewItem.Icon>
-				</NavigationViewItem>
-
-				<NavigationViewItemSeparator />
-
-				<NavigationViewItem Tag="worlds" Content="Worlds">
-					<NavigationViewItem.Icon>
-						<FontIcon Glyph="&#xECAA;" />
 					</NavigationViewItem.Icon>
 				</NavigationViewItem>
 
@@ -175,6 +161,20 @@
 						<FontIcon Glyph="&#xE77B;" />
 					</NavigationViewItem.Icon>
 				</NavigationViewItem>
+
+				<NavigationViewItem Tag="library" Content="Library">
+					<NavigationViewItem.Icon>
+						<FontIcon Glyph="&#xE8F1;" />
+					</NavigationViewItem.Icon>
+				</NavigationViewItem>
+
+				<NavigationViewItem Tag="hosting" Content="Hosting">
+					<NavigationViewItem.Icon>
+						<FontIcon Glyph="&#xE8F9;" />
+					</NavigationViewItem.Icon>
+				</NavigationViewItem>
+
+				<NavigationViewItemSeparator x:Name="InstanceSeparator" Visibility="Collapsed" />
 			</NavigationView.MenuItems>
 
 			<Frame

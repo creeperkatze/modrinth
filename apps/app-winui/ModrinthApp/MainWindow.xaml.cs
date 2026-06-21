@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
+using ModrinthApp.Models;
 using ModrinthApp.Pages;
 
 namespace ModrinthApp;
@@ -18,7 +19,34 @@ public sealed partial class MainWindow : Window
 
 	private void NavView_Loaded(object sender, RoutedEventArgs e)
 	{
+		PopulateRecentInstances();
 		NavView.SelectedItem = NavView.MenuItems[0];
+	}
+
+	private void PopulateRecentInstances()
+	{
+		var recent = InstanceStore.All
+			.Where(i => i.LastPlayed != default)
+			.OrderByDescending(i => i.LastPlayed)
+			.Take(3)
+			.ToList();
+
+		if (recent.Count == 0)
+			return;
+
+		InstanceSeparator.Visibility = Visibility.Visible;
+
+		foreach (var instance in recent)
+		{
+			var item = new NavigationViewItem
+			{
+				Tag     = $"instance:{instance.Id}",
+				Content = instance.Name,
+				Icon    = new FontIcon { Glyph = "" },
+			};
+			ToolTipService.SetToolTip(item, instance.Name);
+			NavView.MenuItems.Add(item);
+		}
 	}
 
 	private void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
@@ -31,14 +59,22 @@ public sealed partial class MainWindow : Window
 		}
 		else if (args.SelectedItem is NavigationViewItem item)
 		{
-			pageType = (item.Tag as string) switch
+			var tag = item.Tag as string ?? string.Empty;
+			if (tag.StartsWith("instance:"))
 			{
-				"home"    => typeof(HomePage),
-				"library" => typeof(LibraryPage),
-				"browse"  => typeof(BrowsePage),
-				"worlds"  => typeof(WorldsPage),
-				"skins"   => typeof(SkinsPage),
-				_         => null,
+				if (ContentFrame.CurrentSourcePageType != typeof(InstancePage))
+					ContentFrame.Navigate(typeof(InstancePage));
+				return;
+			}
+
+			pageType = tag switch
+			{
+				"home"     => typeof(HomePage),
+				"discover" => typeof(BrowsePage),
+				"skins"    => typeof(SkinsPage),
+				"library"  => typeof(LibraryPage),
+				"hosting"  => typeof(HostingPage),
+				_          => null,
 			};
 		}
 
@@ -55,9 +91,9 @@ public sealed partial class MainWindow : Window
 		{
 			nameof(HomePage)     => "Home",
 			nameof(LibraryPage)  => "Library",
-			nameof(BrowsePage)   => "Browse",
-			nameof(WorldsPage)   => "Worlds",
+			nameof(BrowsePage)   => "Discover",
 			nameof(SkinsPage)    => "Skins",
+			nameof(HostingPage)  => "Hosting",
 			nameof(SettingsPage) => "Settings",
 			nameof(InstancePage) => "Instance",
 			_                    => string.Empty,
