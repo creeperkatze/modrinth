@@ -4,74 +4,141 @@
 	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 	Title="Modrinth">
 
-	<!-- Mica backdrop — requires Windows 11 -->
 	<Window.SystemBackdrop>
 		<MicaBackdrop Kind="Base" />
 	</Window.SystemBackdrop>
 
-	<NavigationView
-		x:Name="NavView"
-		PaneDisplayMode="Left"
-		IsBackButtonVisible="Collapsed"
-		IsSettingsVisible="True"
-		OpenPaneLength="220"
-		CompactModeThresholdWidth="768"
-		ExpandedModeThresholdWidth="1024"
-		SelectionChanged="NavView_SelectionChanged"
-		Loaded="NavView_Loaded">
+	<Grid>
+		<Grid.RowDefinitions>
+			<!-- Custom title bar (drag region + logo + nav buttons) -->
+			<RowDefinition Height="48" />
+			<!-- Navigation rail + page content -->
+			<RowDefinition Height="*" />
+		</Grid.RowDefinitions>
 
-		<NavigationView.PaneHeader>
-			<StackPanel Orientation="Horizontal" Spacing="10" Margin="12 6 12 8">
+		<!--
+			Custom title bar — SetTitleBar() in code-behind makes this the drag region.
+			Transparent background lets Mica show through; caption buttons float on the right.
+		-->
+		<Grid x:Name="AppTitleBar" Background="Transparent">
+			<StackPanel
+				Orientation="Horizontal"
+				Spacing="4"
+				Margin="12 0"
+				VerticalAlignment="Center">
+
+				<!-- Modrinth logo -->
 				<Border
-					Width="28"
-					Height="28"
-					CornerRadius="6"
+					Width="22"
+					Height="22"
+					CornerRadius="5"
 					Background="{StaticResource ModrinthGreenBrush}">
-					<!-- Placeholder for Modrinth logo -->
-					<FontIcon Glyph="&#xE7FC;" FontSize="16" Foreground="White" />
+					<FontIcon
+						Glyph="&#xE7FC;"
+						FontSize="12"
+						Foreground="White"
+						HorizontalAlignment="Center"
+						VerticalAlignment="Center" />
 				</Border>
 				<TextBlock
-					Text="Modrinth"
-					Style="{StaticResource SubtitleTextBlockStyle}"
-					VerticalAlignment="Center" />
+					Text="modrinth app"
+					FontWeight="SemiBold"
+					FontSize="13"
+					VerticalAlignment="Center"
+					Margin="6 0 12 0" />
+
+				<!-- Back / Forward -->
+				<Button
+					x:Name="BackButton"
+					IsEnabled="False"
+					Width="30"
+					Height="30"
+					Padding="0"
+					Background="Transparent"
+					BorderBrush="Transparent"
+					Click="BackButton_Click"
+					ToolTipService.ToolTip="Back">
+					<FontIcon Glyph="&#xE76B;" FontSize="12" />
+				</Button>
+				<Button
+					x:Name="ForwardButton"
+					IsEnabled="False"
+					Width="30"
+					Height="30"
+					Padding="0"
+					Background="Transparent"
+					BorderBrush="Transparent"
+					Click="ForwardButton_Click"
+					ToolTipService.ToolTip="Forward">
+					<FontIcon Glyph="&#xE76C;" FontSize="12" />
+				</Button>
+
+				<!-- Current page breadcrumb -->
+				<TextBlock
+					x:Name="PageTitleText"
+					Text="Home"
+					VerticalAlignment="Center"
+					Margin="8 0 0 0"
+					Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
 			</StackPanel>
-		</NavigationView.PaneHeader>
+		</Grid>
 
-		<NavigationView.MenuItems>
-			<NavigationViewItem Tag="home" Content="Home">
-				<NavigationViewItem.Icon>
-					<FontIcon Glyph="&#xE80F;" />
-				</NavigationViewItem.Icon>
-			</NavigationViewItem>
+		<!--
+			Navigation rail + content.
+			PaneDisplayMode="LeftCompact" → always icon-only, never expandable.
+			IsPaneToggleButtonVisible="False" → no hamburger button.
+			AlwaysShowHeader="False" → no duplicate title below our custom bar.
+		-->
+		<NavigationView
+			Grid.Row="1"
+			x:Name="NavView"
+			PaneDisplayMode="LeftCompact"
+			CompactPaneLength="48"
+			IsPaneToggleButtonVisible="False"
+			IsBackButtonVisible="Collapsed"
+			IsSettingsVisible="True"
+			AlwaysShowHeader="False"
+			SelectionChanged="NavView_SelectionChanged"
+			Loaded="NavView_Loaded">
 
-			<NavigationViewItem Tag="library" Content="Library">
-				<NavigationViewItem.Icon>
-					<FontIcon Glyph="&#xE8B7;" />
-				</NavigationViewItem.Icon>
-			</NavigationViewItem>
+			<NavigationView.MenuItems>
+				<NavigationViewItem Tag="home" Content="Home">
+					<NavigationViewItem.Icon>
+						<FontIcon Glyph="&#xE80F;" />
+					</NavigationViewItem.Icon>
+				</NavigationViewItem>
 
-			<NavigationViewItem Tag="browse" Content="Browse">
-				<NavigationViewItem.Icon>
-					<FontIcon Glyph="&#xE721;" />
-				</NavigationViewItem.Icon>
-			</NavigationViewItem>
+				<NavigationViewItem Tag="library" Content="Library">
+					<NavigationViewItem.Icon>
+						<FontIcon Glyph="&#xE8B7;" />
+					</NavigationViewItem.Icon>
+				</NavigationViewItem>
 
-			<NavigationViewItemSeparator />
+				<NavigationViewItem Tag="browse" Content="Browse">
+					<NavigationViewItem.Icon>
+						<FontIcon Glyph="&#xE721;" />
+					</NavigationViewItem.Icon>
+				</NavigationViewItem>
 
-			<NavigationViewItem Tag="worlds" Content="Worlds">
-				<NavigationViewItem.Icon>
-					<FontIcon Glyph="&#xECAA;" />
-				</NavigationViewItem.Icon>
-			</NavigationViewItem>
+				<NavigationViewItemSeparator />
 
-			<NavigationViewItem Tag="skins" Content="Skins">
-				<NavigationViewItem.Icon>
-					<FontIcon Glyph="&#xE77B;" />
-				</NavigationViewItem.Icon>
-			</NavigationViewItem>
-		</NavigationView.MenuItems>
+				<NavigationViewItem Tag="worlds" Content="Worlds">
+					<NavigationViewItem.Icon>
+						<FontIcon Glyph="&#xECAA;" />
+					</NavigationViewItem.Icon>
+				</NavigationViewItem>
 
-		<!-- Main content frame — pages navigate into here -->
-		<Frame x:Name="ContentFrame" IsNavigationStackEnabled="True" />
-	</NavigationView>
+				<NavigationViewItem Tag="skins" Content="Skins">
+					<NavigationViewItem.Icon>
+						<FontIcon Glyph="&#xE77B;" />
+					</NavigationViewItem.Icon>
+				</NavigationViewItem>
+			</NavigationView.MenuItems>
+
+			<Frame
+				x:Name="ContentFrame"
+				IsNavigationStackEnabled="True"
+				Navigated="ContentFrame_Navigated" />
+		</NavigationView>
+	</Grid>
 </Window>
