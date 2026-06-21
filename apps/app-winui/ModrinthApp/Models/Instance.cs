@@ -2,15 +2,16 @@ namespace ModrinthApp.Models;
 
 public class Instance
 {
-	public string Id { get; set; } = Guid.NewGuid().ToString();
+	public string Path { get; set; } = string.Empty;
 	public string Name { get; set; } = string.Empty;
 	public string GameVersion { get; set; } = string.Empty;
 	public string Loader { get; set; } = string.Empty;
 	public int ModCount { get; set; }
 	public DateTime LastPlayed { get; set; }
 	public string? IconPath { get; set; }
+	public bool IsModpack { get; set; }
 
-	public string SubtitleText => $"{Loader}  ·  {GameVersion}  ·  {ModCount} mods";
+	public string SubtitleText => $"{Loader} {GameVersion}";
 
 	public string LastPlayedText
 	{

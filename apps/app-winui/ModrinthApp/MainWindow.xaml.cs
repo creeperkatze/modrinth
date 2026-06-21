@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 using ModrinthApp.Models;
 using ModrinthApp.Pages;
+using ModrinthApp.Services;
 
 namespace ModrinthApp;
 
@@ -17,17 +18,17 @@ public sealed partial class MainWindow : Window
 		this.SetTitleBar(AppTitleBar);
 	}
 
-	private void NavView_Loaded(object sender, RoutedEventArgs e)
+	private async void NavView_Loaded(object sender, RoutedEventArgs e)
 	{
-		PopulateRecentInstances();
+		await PopulateRecentInstancesAsync();
 		NavView.SelectedItem = NavView.MenuItems[0];
 	}
 
-	private void PopulateRecentInstances()
+	private async Task PopulateRecentInstancesAsync()
 	{
-		var recent = InstanceStore.All
+		var all = await ProfileService.GetInstancesAsync();
+		var recent = all
 			.Where(i => i.LastPlayed != default)
-			.OrderByDescending(i => i.LastPlayed)
 			.Take(3)
 			.ToList();
 
@@ -40,9 +41,9 @@ public sealed partial class MainWindow : Window
 		{
 			var item = new NavigationViewItem
 			{
-				Tag     = $"instance:{instance.Id}",
+				Tag     = $"instance:{instance.Path}",
 				Content = instance.Name,
-				Icon    = new FontIcon { Glyph = "" },
+				Icon    = new FontIcon { Glyph = "" },
 			};
 			ToolTipService.SetToolTip(item, instance.Name);
 			NavView.MenuItems.Add(item);
@@ -95,7 +96,7 @@ public sealed partial class MainWindow : Window
 			nameof(SkinsPage)    => "Skins",
 			nameof(HostingPage)  => "Hosting",
 			nameof(SettingsPage) => "Settings",
-			nameof(InstancePage) => "Instance",
+			nameof(InstancePage) => (e.Parameter as Instance)?.Name ?? "Instance",
 			_                    => string.Empty,
 		};
 	}

@@ -7,183 +7,207 @@
 	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 	mc:Ignorable="d">
 
+	<Page.Resources>
+		<!-- Filter tab: RadioButton styled as a green pill -->
+		<Style x:Key="FilterTabStyle" TargetType="RadioButton">
+			<Setter Property="MinWidth" Value="0"/>
+			<Setter Property="Padding" Value="0"/>
+			<Setter Property="FontFamily" Value="{ThemeResource ContentControlThemeFontFamily}"/>
+			<Setter Property="FontSize" Value="{ThemeResource ControlContentThemeFontSize}"/>
+			<Setter Property="Template">
+				<Setter.Value>
+					<ControlTemplate TargetType="RadioButton">
+						<Grid>
+							<Border x:Name="SelectedBg" CornerRadius="20" Background="Transparent"/>
+							<Border x:Name="HoverBg" CornerRadius="20"
+									Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+									Opacity="0"/>
+							<TextBlock x:Name="Label"
+									   Padding="14 6"
+									   Text="{TemplateBinding Content}"
+									   FontWeight="SemiBold"
+									   HorizontalAlignment="Center"
+									   VerticalAlignment="Center"/>
+							<VisualStateManager.VisualStateGroups>
+								<VisualStateGroup x:Name="CheckStates">
+									<VisualState x:Name="Checked">
+										<VisualState.Setters>
+											<Setter Target="SelectedBg.Background" Value="#1BD96A"/>
+											<Setter Target="Label.Foreground" Value="#0A0A0F"/>
+										</VisualState.Setters>
+									</VisualState>
+									<VisualState x:Name="Unchecked"/>
+									<VisualState x:Name="Indeterminate"/>
+								</VisualStateGroup>
+								<VisualStateGroup x:Name="CommonStates">
+									<VisualState x:Name="Normal"/>
+									<VisualState x:Name="PointerOver">
+										<VisualState.Setters>
+											<Setter Target="HoverBg.Opacity" Value="1"/>
+										</VisualState.Setters>
+									</VisualState>
+									<VisualState x:Name="Pressed">
+										<VisualState.Setters>
+											<Setter Target="HoverBg.Background" Value="{ThemeResource SubtleFillColorTertiaryBrush}"/>
+											<Setter Target="HoverBg.Opacity" Value="1"/>
+										</VisualState.Setters>
+									</VisualState>
+									<VisualState x:Name="Disabled"/>
+								</VisualStateGroup>
+							</VisualStateManager.VisualStateGroups>
+						</Grid>
+					</ControlTemplate>
+				</Setter.Value>
+			</Setter>
+		</Style>
+	</Page.Resources>
+
 	<Grid>
 		<Grid.RowDefinitions>
-			<RowDefinition Height="Auto" />
-			<RowDefinition Height="*" />
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="*"/>
 		</Grid.RowDefinitions>
 
-		<!-- Toolbar -->
-		<Grid Padding="20 16" ColumnSpacing="12">
+		<!-- Filter tabs -->
+		<StackPanel Orientation="Horizontal" Padding="16 12 16 4" Spacing="2">
+			<RadioButton Content="All instances" GroupName="LibFilter" IsChecked="True"
+						 Style="{StaticResource FilterTabStyle}"
+						 Checked="FilterTab_Checked" Tag="all"/>
+			<RadioButton Content="Modpacks" GroupName="LibFilter"
+						 Style="{StaticResource FilterTabStyle}"
+						 Checked="FilterTab_Checked" Tag="modpacks"/>
+			<RadioButton Content="Servers" GroupName="LibFilter"
+						 Style="{StaticResource FilterTabStyle}"
+						 Checked="FilterTab_Checked" Tag="servers"/>
+			<RadioButton Content="Custom" GroupName="LibFilter"
+						 Style="{StaticResource FilterTabStyle}"
+						 Checked="FilterTab_Checked" Tag="custom"/>
+		</StackPanel>
+
+		<!-- Toolbar: search + sort + group + new -->
+		<Grid Grid.Row="1" Padding="16 8" ColumnSpacing="8">
 			<Grid.ColumnDefinitions>
-				<ColumnDefinition Width="*" />
-				<ColumnDefinition Width="Auto" />
-				<ColumnDefinition Width="Auto" />
+				<ColumnDefinition Width="*"/>
+				<ColumnDefinition Width="Auto"/>
+				<ColumnDefinition Width="Auto"/>
+				<ColumnDefinition Width="Auto"/>
+				<ColumnDefinition Width="Auto"/>
+				<ColumnDefinition Width="Auto"/>
 			</Grid.ColumnDefinitions>
 
 			<AutoSuggestBox
 				x:Name="SearchBox"
-				PlaceholderText="Filter instances..."
+				PlaceholderText="Search"
 				QueryIcon="Find"
 				VerticalAlignment="Center"
-				TextChanged="SearchBox_TextChanged" />
+				TextChanged="SearchBox_TextChanged"/>
 
-			<ComboBox
-				Grid.Column="1"
-				x:Name="SortCombo"
-				SelectedIndex="0"
-				VerticalAlignment="Center"
-				SelectionChanged="SortCombo_SelectionChanged">
-				<ComboBoxItem Content="Last Played" />
-				<ComboBoxItem Content="Name (A–Z)" />
-				<ComboBoxItem Content="Name (Z–A)" />
-				<ComboBoxItem Content="Most Mods" />
+			<TextBlock Grid.Column="1"
+					   Text="Sort by:"
+					   VerticalAlignment="Center"
+					   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+			<ComboBox x:Name="SortCombo"
+					  Grid.Column="2"
+					  SelectedIndex="0"
+					  VerticalAlignment="Center"
+					  SelectionChanged="SortCombo_SelectionChanged">
+				<ComboBoxItem Content="Last played"/>
+				<ComboBoxItem Content="Name (A–Z)"/>
+				<ComboBoxItem Content="Name (Z–A)"/>
+				<ComboBoxItem Content="Most mods"/>
 			</ComboBox>
 
-			<Button
-				Grid.Column="2"
-				Content="New Instance"
-				Style="{StaticResource AccentButtonStyle}"
-				VerticalAlignment="Center"
-				Click="NewInstance_Click">
-				<Button.ContentTemplate>
-					<DataTemplate>
-						<StackPanel Orientation="Horizontal" Spacing="8">
-							<FontIcon Glyph="&#xE710;" FontSize="14" />
-							<TextBlock Text="New Instance" />
-						</StackPanel>
-					</DataTemplate>
-				</Button.ContentTemplate>
+			<TextBlock Grid.Column="3"
+					   Text="Group by:"
+					   VerticalAlignment="Center"
+					   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+			<ComboBox x:Name="GroupCombo"
+					  Grid.Column="4"
+					  SelectedIndex="0"
+					  VerticalAlignment="Center">
+				<ComboBoxItem Content="None"/>
+				<ComboBoxItem Content="Loader"/>
+				<ComboBoxItem Content="Game version"/>
+			</ComboBox>
+
+			<Button Grid.Column="5"
+					Style="{StaticResource AccentButtonStyle}"
+					VerticalAlignment="Center"
+					Click="NewInstance_Click">
+				<StackPanel Orientation="Horizontal" Spacing="8">
+					<FontIcon Glyph="&#xE710;" FontSize="14"/>
+					<TextBlock Text="New Instance"/>
+				</StackPanel>
 			</Button>
 		</Grid>
 
-		<!-- Instance list -->
-		<ListView
-			Grid.Row="1"
-			x:Name="InstanceList"
-			ItemsSource="{x:Bind FilteredInstances}"
-			SelectionMode="None"
-			Padding="8 0 8 8">
-			<ListView.ItemContainerStyle>
-				<Style TargetType="ListViewItem">
-					<Setter Property="HorizontalContentAlignment" Value="Stretch" />
-					<Setter Property="Padding" Value="4 2" />
-				</Style>
-			</ListView.ItemContainerStyle>
-			<ListView.ItemTemplate>
-				<DataTemplate x:DataType="models:Instance">
-					<Border
-						CornerRadius="8"
-						Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-						BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-						BorderThickness="1"
-						Padding="16 12">
-						<Grid ColumnSpacing="16">
-							<Grid.ColumnDefinitions>
-								<ColumnDefinition Width="48" />
-								<ColumnDefinition Width="*" />
-								<ColumnDefinition Width="Auto" />
-								<ColumnDefinition Width="Auto" />
-								<ColumnDefinition Width="Auto" />
-							</Grid.ColumnDefinitions>
+		<!-- Instance grid -->
+		<ScrollViewer Grid.Row="2" Padding="16 4 16 16">
+			<ItemsRepeater x:Name="InstanceGrid"
+						   ItemsSource="{x:Bind FilteredInstances}">
+				<ItemsRepeater.Layout>
+					<UniformGridLayout
+						MinItemWidth="256"
+						MinColumnSpacing="8"
+						MinRowSpacing="8"
+						ItemsStretch="Fill"/>
+				</ItemsRepeater.Layout>
+				<ItemsRepeater.ItemTemplate>
+					<DataTemplate x:DataType="models:Instance">
+						<Border CornerRadius="12"
+								Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+								BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+								BorderThickness="1"
+								Padding="16 12"
+								Tag="{x:Bind}"
+								Tapped="InstanceCard_Tapped"
+								IsHitTestVisible="True">
+							<Grid ColumnSpacing="12">
+								<Grid.ColumnDefinitions>
+									<ColumnDefinition Width="48"/>
+									<ColumnDefinition Width="*"/>
+								</Grid.ColumnDefinitions>
 
-							<!-- Instance icon -->
-							<Border
-								Width="48"
-								Height="48"
-								CornerRadius="10">
-								<Border.Background>
-									<SolidColorBrush Color="{x:Bind LoaderColor}" />
-								</Border.Background>
-								<FontIcon
-									Glyph="&#xE7FC;"
-									FontSize="24"
-									Foreground="White"
-									HorizontalAlignment="Center"
-									VerticalAlignment="Center" />
-							</Border>
+								<!-- Instance icon -->
+								<Border Width="48" Height="48" CornerRadius="10">
+									<Border.Background>
+										<SolidColorBrush Color="{x:Bind LoaderColor}"/>
+									</Border.Background>
+									<FontIcon
+										Glyph="&#xE7FC;"
+										FontSize="24"
+										Foreground="White"
+										HorizontalAlignment="Center"
+										VerticalAlignment="Center"/>
+								</Border>
 
-							<!-- Name + details -->
-							<StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-								<TextBlock
-									Text="{x:Bind Name}"
-									Style="{StaticResource BodyStrongTextBlockStyle}"
-									TextTrimming="CharacterEllipsis"
-									MaxLines="1" />
-								<TextBlock
-									Text="{x:Bind SubtitleText}"
-									Style="{StaticResource CaptionTextBlockStyle}"
-									Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-							</StackPanel>
-
-							<!-- Last played -->
-							<TextBlock
-								Grid.Column="2"
-								Text="{x:Bind LastPlayedText}"
-								Style="{StaticResource CaptionTextBlockStyle}"
-								Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-								VerticalAlignment="Center"
-								MinWidth="80"
-								TextAlignment="Right" />
-
-							<!-- Play button -->
-							<Button
-								Grid.Column="3"
-								VerticalAlignment="Center"
-								Style="{StaticResource AccentButtonStyle}">
-								<StackPanel Orientation="Horizontal" Spacing="6">
-									<FontIcon Glyph="&#xE768;" FontSize="12" />
-									<TextBlock Text="Play" />
+								<!-- Name + loader / version -->
+								<StackPanel Grid.Column="1"
+											VerticalAlignment="Center"
+											Spacing="4">
+									<TextBlock
+										Text="{x:Bind Name}"
+										FontWeight="SemiBold"
+										MaxLines="1"
+										TextTrimming="CharacterEllipsis"/>
+									<StackPanel Orientation="Horizontal" Spacing="4">
+										<FontIcon
+											Glyph="&#xE7FC;"
+											FontSize="11"
+											Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+											VerticalAlignment="Center"/>
+										<TextBlock
+											Text="{x:Bind SubtitleText}"
+											Style="{StaticResource CaptionTextBlockStyle}"
+											Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+									</StackPanel>
 								</StackPanel>
-								<!-- TODO: Click handler → Tauri IPC: profile_run(instance.Id) -->
-							</Button>
-
-							<!-- Options flyout -->
-							<Button
-								Grid.Column="4"
-								VerticalAlignment="Center"
-								Background="Transparent"
-								BorderBrush="Transparent">
-								<FontIcon Glyph="&#xE712;" FontSize="16" />
-								<Button.Flyout>
-									<MenuFlyout>
-										<MenuFlyoutItem Text="Open Folder">
-											<MenuFlyoutItem.Icon>
-												<FontIcon Glyph="&#xE838;" />
-											</MenuFlyoutItem.Icon>
-											<!-- TODO: Tauri IPC: highlight_in_folder(profile_get_full_path(instance.Id)) -->
-										</MenuFlyoutItem>
-										<MenuFlyoutItem Text="Edit Instance">
-											<MenuFlyoutItem.Icon>
-												<FontIcon Glyph="&#xE70F;" />
-											</MenuFlyoutItem.Icon>
-										</MenuFlyoutItem>
-										<MenuFlyoutItem Text="Duplicate">
-											<MenuFlyoutItem.Icon>
-												<FontIcon Glyph="&#xE8C8;" />
-											</MenuFlyoutItem.Icon>
-											<!-- TODO: Tauri IPC: profile_duplicate(instance.Id) -->
-										</MenuFlyoutItem>
-										<MenuFlyoutItem Text="Export as .mrpack">
-											<MenuFlyoutItem.Icon>
-												<FontIcon Glyph="&#xE896;" />
-											</MenuFlyoutItem.Icon>
-											<!-- TODO: Tauri IPC: profile_export_mrpack(instance.Id, ...) -->
-										</MenuFlyoutItem>
-										<MenuFlyoutSeparator />
-										<MenuFlyoutItem Text="Delete Instance">
-											<MenuFlyoutItem.Icon>
-												<FontIcon Glyph="&#xE74D;" />
-											</MenuFlyoutItem.Icon>
-											<!-- TODO: Tauri IPC: profile_remove(instance.Id) -->
-										</MenuFlyoutItem>
-									</MenuFlyout>
-								</Button.Flyout>
-							</Button>
-						</Grid>
-					</Border>
-				</DataTemplate>
-			</ListView.ItemTemplate>
-		</ListView>
+							</Grid>
+						</Border>
+					</DataTemplate>
+				</ItemsRepeater.ItemTemplate>
+			</ItemsRepeater>
+		</ScrollViewer>
 	</Grid>
 </Page>

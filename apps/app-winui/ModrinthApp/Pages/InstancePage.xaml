@@ -2,188 +2,274 @@
 	x:Class="ModrinthApp.Pages.InstancePage"
 	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
 	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:models="using:ModrinthApp.Models"
 	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 	mc:Ignorable="d">
 
 	<Grid>
 		<Grid.RowDefinitions>
-			<RowDefinition Height="Auto" />
-			<RowDefinition Height="*" />
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="*"/>
 		</Grid.RowDefinitions>
 
-		<!-- Instance header -->
-		<Border
-			Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-			BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-			BorderThickness="0 0 0 1"
-			Padding="20 14">
+		<!-- Header -->
+		<Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+				BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+				BorderThickness="0 0 0 1"
+				Padding="20 16">
 			<Grid ColumnSpacing="16">
 				<Grid.ColumnDefinitions>
-					<ColumnDefinition Width="Auto" />
-					<ColumnDefinition Width="*" />
-					<ColumnDefinition Width="Auto" />
+					<ColumnDefinition Width="Auto"/>
+					<ColumnDefinition Width="*"/>
+					<ColumnDefinition Width="Auto"/>
 				</Grid.ColumnDefinitions>
 
 				<!-- Icon -->
-				<Border
-					Width="52"
-					Height="52"
-					CornerRadius="10"
-					x:Name="InstanceIconBorder">
+				<Border x:Name="IconBorder" Width="64" Height="64" CornerRadius="12">
 					<Border.Background>
-						<SolidColorBrush x:Name="InstanceIconColor" Color="#1BD96A" />
+						<SolidColorBrush x:Name="IconColor" Color="#1BD96A"/>
 					</Border.Background>
-					<FontIcon Glyph="&#xE7FC;" FontSize="26" Foreground="White"
-					          HorizontalAlignment="Center" VerticalAlignment="Center" />
+					<FontIcon Glyph="&#xE7FC;" FontSize="32" Foreground="White"
+							  HorizontalAlignment="Center" VerticalAlignment="Center"/>
 				</Border>
 
 				<!-- Name + subtitle -->
-				<StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-					<TextBlock x:Name="InstanceNameText" Text="Instance Name"
-					           Style="{StaticResource SubtitleTextBlockStyle}" />
-					<TextBlock x:Name="InstanceSubtitleText" Text="Loader  ·  Version  ·  N mods"
-					           Style="{StaticResource CaptionTextBlockStyle}"
-					           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+				<StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
+					<TextBlock x:Name="NameText"
+							   Style="{StaticResource TitleTextBlockStyle}"
+							   FontSize="20"
+							   MaxLines="1"
+							   TextTrimming="CharacterEllipsis"/>
+					<StackPanel Orientation="Horizontal" Spacing="6">
+						<FontIcon Glyph="&#xE7FC;" FontSize="12"
+								  Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+								  VerticalAlignment="Center"/>
+						<TextBlock x:Name="SubtitleText"
+								   Style="{StaticResource CaptionTextBlockStyle}"
+								   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+								   VerticalAlignment="Center"/>
+					</StackPanel>
 				</StackPanel>
 
 				<!-- Actions -->
 				<StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-					<Button Style="{StaticResource AccentButtonStyle}">
+					<Button x:Name="PlayButton" Style="{StaticResource AccentButtonStyle}" Click="Play_Click">
 						<StackPanel Orientation="Horizontal" Spacing="6">
-							<FontIcon Glyph="&#xE768;" FontSize="14" />
-							<TextBlock Text="Play" />
+							<FontIcon Glyph="&#xE768;" FontSize="14"/>
+							<TextBlock Text="Play"/>
 						</StackPanel>
-						<!-- TODO: Tauri IPC: profile_run(instanceId) -->
 					</Button>
-					<Button>
-						<StackPanel Orientation="Horizontal" Spacing="6">
-							<FontIcon Glyph="&#xE838;" FontSize="14" />
-							<TextBlock Text="Folder" />
-						</StackPanel>
-						<!-- TODO: Tauri IPC: highlight_in_folder(profile_get_full_path(instanceId)) -->
+
+					<Button Click="OpenFolder_Click" ToolTipService.ToolTip="Open folder">
+						<FontIcon Glyph="&#xE838;" FontSize="14"/>
 					</Button>
-					<Button>
-						<FontIcon Glyph="&#xE70F;" FontSize="14" />
-						<!-- TODO: Open edit instance dialog -->
+
+					<Button ToolTipService.ToolTip="More options">
+						<FontIcon Glyph="&#xE712;" FontSize="14"/>
+						<Button.Flyout>
+							<MenuFlyout>
+								<MenuFlyoutItem Text="Open folder" Click="OpenFolder_Click">
+									<MenuFlyoutItem.Icon><FontIcon Glyph="&#xE838;"/></MenuFlyoutItem.Icon>
+								</MenuFlyoutItem>
+								<MenuFlyoutSeparator/>
+								<MenuFlyoutItem Text="Delete instance">
+									<MenuFlyoutItem.Icon><FontIcon Glyph="&#xE74D;"/></MenuFlyoutItem.Icon>
+								</MenuFlyoutItem>
+							</MenuFlyout>
+						</Button.Flyout>
 					</Button>
 				</StackPanel>
 			</Grid>
 		</Border>
 
-		<!-- Pivot tabs: Mods / Worlds / Files / Logs -->
-		<Pivot Grid.Row="1" Margin="12 0">
+		<!-- Tabs -->
+		<Pivot Grid.Row="1" Margin="8 0" SelectionChanged="Pivot_SelectionChanged">
 
-			<PivotItem Header="Mods">
+			<!-- Mods tab -->
+			<PivotItem Header="Mods" x:Name="ModsTab">
 				<Grid>
 					<Grid.RowDefinitions>
-						<RowDefinition Height="Auto" />
-						<RowDefinition Height="*" />
+						<RowDefinition Height="Auto"/>
+						<RowDefinition Height="*"/>
 					</Grid.RowDefinitions>
 
-					<Grid Padding="0 12 0 8" ColumnSpacing="8">
+					<!-- Mods toolbar -->
+					<Grid Padding="4 12 4 8" ColumnSpacing="8">
 						<Grid.ColumnDefinitions>
-							<ColumnDefinition Width="*" />
-							<ColumnDefinition Width="Auto" />
+							<ColumnDefinition Width="*"/>
+							<ColumnDefinition Width="Auto"/>
 						</Grid.ColumnDefinitions>
-						<AutoSuggestBox PlaceholderText="Filter mods…" QueryIcon="Find" />
-						<Button Grid.Column="1" Content="Add Mods" Style="{StaticResource AccentButtonStyle}">
-							<!-- TODO: Navigate to Browse page pre-filtered for this instance's loader/version -->
-						</Button>
+						<AutoSuggestBox x:Name="ModSearchBox"
+										PlaceholderText="Filter mods…"
+										QueryIcon="Find"
+										TextChanged="ModSearch_TextChanged"/>
+						<Button Grid.Column="1" Content="Add mods"
+								Style="{StaticResource AccentButtonStyle}"
+								Click="AddMods_Click"/>
 					</Grid>
 
-					<ListView
-						Grid.Row="1"
-						x:Name="ModList"
-						SelectionMode="None">
+					<!-- Mod list -->
+					<ListView Grid.Row="1"
+							  x:Name="ModList"
+							  ItemsSource="{x:Bind FilteredMods}"
+							  SelectionMode="None">
 						<ListView.ItemContainerStyle>
 							<Style TargetType="ListViewItem">
-								<Setter Property="HorizontalContentAlignment" Value="Stretch" />
-								<Setter Property="Padding" Value="4 2" />
+								<Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+								<Setter Property="Padding" Value="4 3"/>
 							</Style>
 						</ListView.ItemContainerStyle>
-						<!-- TODO: Populate from Tauri IPC: profile_get_content_items(instanceId) -->
+						<ListView.ItemTemplate>
+							<DataTemplate x:DataType="models:ContentItem">
+								<Border CornerRadius="8"
+										Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+										BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+										BorderThickness="1"
+										Padding="12 10">
+									<Grid ColumnSpacing="12">
+										<Grid.ColumnDefinitions>
+											<ColumnDefinition Width="36"/>
+											<ColumnDefinition Width="*"/>
+											<ColumnDefinition Width="Auto"/>
+											<ColumnDefinition Width="Auto"/>
+										</Grid.ColumnDefinitions>
 
-						<!-- Placeholder rows while not yet wired to backend -->
-						<ListViewItem>
-							<Border CornerRadius="6" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-							        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" Padding="12 10">
-								<Grid ColumnSpacing="12">
-									<Grid.ColumnDefinitions>
-										<ColumnDefinition Width="36" />
-										<ColumnDefinition Width="*" />
-										<ColumnDefinition Width="Auto" />
-										<ColumnDefinition Width="Auto" />
-									</Grid.ColumnDefinitions>
-									<Border Width="36" Height="36" CornerRadius="6" Background="#1BD96A">
-										<FontIcon Glyph="&#xE7FC;" FontSize="18" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
-									</Border>
-									<StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
-										<TextBlock Text="Sodium" FontWeight="SemiBold" />
-										<TextBlock Text="by CaffeineMC  ·  mc1.21-0.6.8" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-									</StackPanel>
-									<ToggleButton Grid.Column="2" Content="Enabled" VerticalAlignment="Center" IsChecked="True" />
-									<Button Grid.Column="3" Background="Transparent" BorderBrush="Transparent" VerticalAlignment="Center">
-										<FontIcon Glyph="&#xE74D;" FontSize="14" />
-									</Button>
-								</Grid>
-							</Border>
-						</ListViewItem>
+										<!-- Mod icon -->
+										<Border Width="36" Height="36" CornerRadius="8" Background="#6B7280">
+											<FontIcon Glyph="&#xE7FC;" FontSize="18" Foreground="White"
+													  HorizontalAlignment="Center" VerticalAlignment="Center"/>
+										</Border>
 
-						<ListViewItem>
-							<Border CornerRadius="6" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-							        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" Padding="12 10">
-								<Grid ColumnSpacing="12">
-									<Grid.ColumnDefinitions>
-										<ColumnDefinition Width="36" />
-										<ColumnDefinition Width="*" />
-										<ColumnDefinition Width="Auto" />
-										<ColumnDefinition Width="Auto" />
-									</Grid.ColumnDefinitions>
-									<Border Width="36" Height="36" CornerRadius="6" Background="#4A5568">
-										<FontIcon Glyph="&#xE7FC;" FontSize="18" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
-									</Border>
-									<StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
-										<TextBlock Text="Iris Shaders" FontWeight="SemiBold" />
-										<TextBlock Text="by IrisShaders  ·  1.8.0+mc1.21.1" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-									</StackPanel>
-									<ToggleButton Grid.Column="2" Content="Enabled" VerticalAlignment="Center" IsChecked="True" />
-									<Button Grid.Column="3" Background="Transparent" BorderBrush="Transparent" VerticalAlignment="Center">
-										<FontIcon Glyph="&#xE74D;" FontSize="14" />
-									</Button>
-								</Grid>
-							</Border>
-						</ListViewItem>
+										<!-- Name + filename -->
+										<StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+											<TextBlock Text="{x:Bind FileName}"
+													   FontWeight="SemiBold"
+													   MaxLines="1"
+													   TextTrimming="CharacterEllipsis"/>
+											<TextBlock Text="{x:Bind RawFileName}"
+													   Style="{StaticResource CaptionTextBlockStyle}"
+													   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+													   MaxLines="1"
+													   TextTrimming="CharacterEllipsis"/>
+										</StackPanel>
 
+										<!-- Enable / disable toggle -->
+										<ToggleSwitch Grid.Column="2"
+													  IsOn="{x:Bind Enabled, Mode=TwoWay}"
+													  Tag="{x:Bind}"
+													  Toggled="Mod_Toggled"
+													  VerticalAlignment="Center"
+													  OnContent="" OffContent=""/>
+
+										<!-- Delete -->
+										<Button Grid.Column="3"
+												Tag="{x:Bind}"
+												VerticalAlignment="Center"
+												Background="Transparent"
+												BorderBrush="Transparent"
+												Click="Mod_Delete_Click">
+											<FontIcon Glyph="&#xE74D;" FontSize="14"/>
+										</Button>
+									</Grid>
+								</Border>
+							</DataTemplate>
+						</ListView.ItemTemplate>
 					</ListView>
 				</Grid>
 			</PivotItem>
 
-			<PivotItem Header="Worlds">
-				<TextBlock
-					Text="Worlds list — TODO: populate from Tauri IPC: get_profile_worlds(instanceId)"
-					Style="{StaticResource CaptionTextBlockStyle}"
-					Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-					Margin="0 16"
-					TextWrapping="Wrap" />
-			</PivotItem>
-
+			<!-- Files tab -->
 			<PivotItem Header="Files">
-				<TextBlock
-					Text="File browser — TODO: populate from Tauri IPC: profile_get_full_path(instanceId), then open OS file picker or custom tree view"
-					Style="{StaticResource CaptionTextBlockStyle}"
-					Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-					Margin="0 16"
-					TextWrapping="Wrap" />
+				<StackPanel Spacing="12" Padding="4 16">
+					<TextBlock Text="Instance folder" FontWeight="SemiBold"/>
+					<Border CornerRadius="8"
+							Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+							BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+							BorderThickness="1"
+							Padding="12">
+						<Grid ColumnSpacing="12">
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="*"/>
+								<ColumnDefinition Width="Auto"/>
+							</Grid.ColumnDefinitions>
+							<TextBlock x:Name="FolderPathText"
+									   VerticalAlignment="Center"
+									   TextTrimming="CharacterEllipsis"
+									   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+									   FontFamily="Cascadia Mono, Consolas, Courier New"/>
+							<Button Grid.Column="1" Click="OpenFolder_Click">
+								<StackPanel Orientation="Horizontal" Spacing="6">
+									<FontIcon Glyph="&#xE838;" FontSize="14"/>
+									<TextBlock Text="Open"/>
+								</StackPanel>
+							</Button>
+						</Grid>
+					</Border>
+				</StackPanel>
 			</PivotItem>
 
+			<!-- Worlds tab -->
+			<PivotItem Header="Worlds">
+				<Grid>
+					<Grid.RowDefinitions>
+						<RowDefinition Height="Auto"/>
+						<RowDefinition Height="*"/>
+					</Grid.RowDefinitions>
+					<TextBlock x:Name="WorldsEmptyText"
+							   Text="No saved worlds found."
+							   Margin="4 16 0 0"
+							   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+					<ListView x:Name="WorldList"
+							  Grid.Row="1"
+							  SelectionMode="None"
+							  Margin="0 8 0 0">
+						<ListView.ItemContainerStyle>
+							<Style TargetType="ListViewItem">
+								<Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+								<Setter Property="Padding" Value="4 3"/>
+							</Style>
+						</ListView.ItemContainerStyle>
+						<ListView.ItemTemplate>
+							<DataTemplate x:DataType="x:String">
+								<Border CornerRadius="8"
+										Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+										BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+										BorderThickness="1"
+										Padding="12 10">
+									<StackPanel Orientation="Horizontal" Spacing="12">
+										<Border Width="36" Height="36" CornerRadius="8" Background="#2D3748">
+											<FontIcon Glyph="&#xE909;" FontSize="18" Foreground="White"
+													  HorizontalAlignment="Center" VerticalAlignment="Center"/>
+										</Border>
+										<TextBlock Text="{x:Bind}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+									</StackPanel>
+								</Border>
+							</DataTemplate>
+						</ListView.ItemTemplate>
+					</ListView>
+				</Grid>
+			</PivotItem>
+
+			<!-- Logs tab -->
 			<PivotItem Header="Logs">
-				<TextBlock
-					Text="Log viewer — TODO: read game log from the instance's logs/ folder and display in a read-only TextBox with auto-scroll"
-					Style="{StaticResource CaptionTextBlockStyle}"
-					Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-					Margin="0 16"
-					TextWrapping="Wrap" />
+				<Grid>
+					<TextBlock x:Name="LogsEmptyText"
+							   Text="No log file found. Play the instance first to generate a log."
+							   Margin="4 16 0 0"
+							   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+							   TextWrapping="Wrap"/>
+					<TextBox x:Name="LogTextBox"
+							 IsReadOnly="True"
+							 AcceptsReturn="True"
+							 TextWrapping="NoWrap"
+							 IsSpellCheckEnabled="False"
+							 FontFamily="Cascadia Mono, Consolas, Courier New"
+							 FontSize="12"
+							 ScrollViewer.HorizontalScrollBarVisibility="Auto"
+							 ScrollViewer.VerticalScrollBarVisibility="Auto"
+							 Visibility="Collapsed"/>
+				</Grid>
 			</PivotItem>
 
 		</Pivot>

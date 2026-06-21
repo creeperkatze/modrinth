@@ -1,25 +1,43 @@
 using System.Collections.ObjectModel;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Navigation;
 using ModrinthApp.Models;
+using ModrinthApp.Services;
 
 namespace ModrinthApp.Pages;
 
 public sealed partial class LibraryPage : Page
 {
-	private readonly List<Instance> _allInstances = InstanceStore.All;
+	private List<Instance> _allInstances = [];
+	private string _currentFilter = "all";
 
 	public ObservableCollection<Instance> FilteredInstances { get; } = new();
 
 	public LibraryPage()
 	{
 		this.InitializeComponent();
-		RefreshList();
+	}
+
+	protected override async void OnNavigatedTo(NavigationEventArgs e)
+	{
+		base.OnNavigatedTo(e);
+		_allInstances = await ProfileService.GetInstancesAsync();
+		RefreshList(SearchBox.Text, SortCombo.SelectedIndex);
 	}
 
 	private void RefreshList(string filter = "", int sortIndex = 0)
 	{
 		var query = _allInstances.AsEnumerable();
+
+		query = _currentFilter switch
+		{
+			"modpacks" => query.Where(i => i.IsModpack),
+			"custom"   => query.Where(i => !i.IsModpack),
+			"servers"  => Enumerable.Empty<Instance>(),
+			_          => query,
+		};
 
 		if (!string.IsNullOrWhiteSpace(filter))
 			query = query.Where(i => i.Name.Contains(filter, StringComparison.OrdinalIgnoreCase));
@@ -37,6 +55,15 @@ public sealed partial class LibraryPage : Page
 			FilteredInstances.Add(instance);
 	}
 
+	private void FilterTab_Checked(object sender, RoutedEventArgs e)
+	{
+		if (sender is RadioButton rb && rb.Tag is string tag)
+		{
+			_currentFilter = tag;
+			RefreshList(SearchBox.Text, SortCombo.SelectedIndex);
+		}
+	}
+
 	private void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
 	{
 		if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
@@ -48,10 +75,14 @@ public sealed partial class LibraryPage : Page
 		RefreshList(SearchBox.Text, SortCombo.SelectedIndex);
 	}
 
+	private void InstanceCard_Tapped(object sender, TappedRoutedEventArgs e)
+	{
+		if (sender is FrameworkElement fe && fe.Tag is Instance instance)
+			Frame.Navigate(typeof(InstancePage), instance);
+	}
+
 	private async void NewInstance_Click(object sender, RoutedEventArgs e)
 	{
-		// TODO: Open a "Create new instance" dialog
-		// Tauri IPC calls needed: metadata_get_game_versions, metadata_get_loader_versions, profile_create
 		var dialog = new ContentDialog
 		{
 			Title = "New Instance",
