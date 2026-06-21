@@ -152,7 +152,7 @@
 
 				<NavigationViewItem Tag="discover" Content="Discover">
 					<NavigationViewItem.Icon>
-						<FontIcon Glyph="&#xE721;" />
+						<FontIcon Glyph="&#xE909;" />
 					</NavigationViewItem.Icon>
 				</NavigationViewItem>
 
