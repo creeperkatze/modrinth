@@ -1,0 +1,285 @@
+// Refract palette overrides for the shared Modrinth theme variables (packages/assets/styles/variables.scss).
+// Imported after omorphia so these win over the shared defaults without changing the website.
+// `.oled-mode` and `.retro-mode` `@extend .dark-mode`, so the dark rules exclude them with `:not()` where
+// those themes define their own values.
+
+html,
+.light-mode,
+.light {
+	--surface-1: #ecebe9;
+	--surface-1-5: #efeeec;
+	--surface-2: #f6f5f4;
+	--surface-2-5: #f3f0ec;
+	--surface-3: #f9f8f7;
+	--surface-4: #ffffff;
+	--surface-5: #dedbd7;
+
+	--color-red-50: #fef2f2;
+	--color-red-100: #fee2e2;
+	--color-red-200: #fecaca;
+	--color-red-300: #fca5a5;
+	--color-red-400: #f87171;
+	--color-red-500: #ef4444;
+	--color-red-600: #dc2626;
+	--color-red-700: #b91c1c;
+	--color-red-800: #991b1b;
+	--color-red-900: #7f1d1d;
+	--color-red-950: #450a0a;
+	--color-red: var(--color-red-600);
+
+	--color-orange-50: #fff7ed;
+	--color-orange-100: #ffedd5;
+	--color-orange-200: #fed7aa;
+	--color-orange-300: #fdba74;
+	--color-orange-400: #fb923c;
+	--color-orange-500: #f97316;
+	--color-orange-600: #ea580c;
+	--color-orange-700: #c2410c;
+	--color-orange-800: #9a3412;
+	--color-orange-900: #7c2d12;
+	--color-orange-950: #431407;
+	--color-orange: var(--color-orange-600);
+
+	--color-green-50: #ecfdf5;
+	--color-green-100: #d1fae5;
+	--color-green-200: #a7f3d0;
+	--color-green-300: #6ee7b7;
+	--color-green-400: #34d399;
+	--color-green-500: #10b981;
+	--color-green-600: #059669;
+	--color-green-700: #047857;
+	--color-green-800: #065f46;
+	--color-green-900: #064e3b;
+	--color-green-950: #022c22;
+	--color-green: var(--color-green-600);
+
+	--color-blue-50: #f0f9ff;
+	--color-blue-100: #e0f2fe;
+	--color-blue-200: #bae6fd;
+	--color-blue-300: #7dd3fc;
+	--color-blue-400: #38bdf8;
+	--color-blue-500: #0ea5e9;
+	--color-blue-600: #0284c7;
+	--color-blue-700: #0369a1;
+	--color-blue-800: #075985;
+	--color-blue-900: #0c4a6e;
+	--color-blue-950: #082f49;
+	--color-blue: var(--color-blue-600);
+
+	--color-purple-50: #f5f3ff;
+	--color-purple-100: #ede9fe;
+	--color-purple-200: #ddd6fe;
+	--color-purple-300: #c4b5fd;
+	--color-purple-400: #a78bfa;
+	--color-purple-500: #8b5cf6;
+	--color-purple-600: #7c3aed;
+	--color-purple-700: #6d28d9;
+	--color-purple-800: #5b21b6;
+	--color-purple-900: #4c1d95;
+	--color-purple-950: #2e1065;
+	--color-purple: var(--color-purple-600);
+
+	--color-gray-50: #fafaf9;
+	--color-gray-100: #f5f5f4;
+	--color-gray-200: #e7e5e4;
+	--color-gray-300: #d6d3d1;
+	--color-gray-400: #a8a29e;
+	--color-gray-500: #78716c;
+	--color-gray-600: #57534e;
+	--color-gray-700: #44403c;
+	--color-gray-800: #292524;
+	--color-gray-900: #1c1917;
+	--color-gray-950: #0c0a09;
+	--color-gray: var(--color-gray-600);
+
+	--color-red-highlight: rgba(220, 38, 38, 0.25);
+	--color-orange-highlight: rgba(234, 88, 12, 0.25);
+	--color-green-highlight: rgba(5, 150, 105, 0.25);
+	--color-blue-highlight: rgba(2, 132, 199, 0.25);
+	--color-purple-highlight: rgba(124, 58, 237, 0.25);
+	--color-gray-highlight: rgba(87, 83, 78, 0.25);
+
+	--color-red-bg: rgba(220, 38, 38, 0.1);
+	--color-orange-bg: rgba(234, 88, 12, 0.1);
+	--color-green-bg: rgba(5, 150, 105, 0.1);
+	--color-blue-bg: rgba(2, 132, 199, 0.1);
+	--color-purple-bg: rgba(124, 58, 237, 0.1);
+
+	--color-text-primary: #1c1917;
+	--color-text-default: #292524;
+	--color-text-tertiary: #57534e;
+	--color-scrollbar: #a8a29e;
+	--color-button-border: rgba(168, 162, 158, 0.35);
+	--color-accent-contrast: #0c0a09;
+
+	--color-brand: #f59e0b;
+	--color-brand-highlight: rgba(245, 158, 11, 0.25);
+	--color-brand-shadow: rgba(245, 158, 11, 0.7);
+
+	--brand-gradient-bg: linear-gradient(
+		0deg,
+		rgba(182, 138, 68, 0.175) 0%,
+		rgba(250, 190, 58, 0.125) 100%
+	);
+	--brand-gradient-strong-bg: linear-gradient(
+		270deg,
+		rgba(182, 138, 68, 0.175) 0%,
+		rgba(225, 160, 36, 0.12) 100%
+	);
+	--brand-gradient-border: rgba(64, 48, 32, 0.15);
+	--brand-gradient-fade-out-color: linear-gradient(to bottom, rgba(235, 224, 213, 0), #ece0d0 70%);
+
+	--loading-bar-gradient: linear-gradient(to right, var(--color-brand) 0%, #fcd34d 100%);
+
+	--splash-tint-top: rgba(255, 224, 170, 0.465);
+	--splash-tint-bottom: rgba(255, 214, 183, 0.563);
+	--splash-overlay: rgba(255, 236, 200, 0.315);
+}
+
+.dark-mode:not(.retro-mode),
+.dark:not(.retro-mode),
+:root[data-theme='dark']:not(.retro-mode) {
+	--color-red-50: #fef2f2;
+	--color-red-100: #fee2e2;
+	--color-red-200: #fecaca;
+	--color-red-300: #fca5a5;
+	--color-red-400: #f87171;
+	--color-red-500: #ef4444;
+	--color-red-600: #dc2626;
+	--color-red-700: #b91c1c;
+	--color-red-800: #991b1b;
+	--color-red-900: #7f1d1d;
+	--color-red-950: #450a0a;
+	--color-red: var(--color-red-400);
+
+	--color-orange-50: #fff7ed;
+	--color-orange-100: #ffedd5;
+	--color-orange-200: #fed7aa;
+	--color-orange-300: #fdba74;
+	--color-orange-400: #fb923c;
+	--color-orange-500: #f97316;
+	--color-orange-600: #ea580c;
+	--color-orange-700: #c2410c;
+	--color-orange-800: #9a3412;
+	--color-orange-900: #7c2d12;
+	--color-orange-950: #431407;
+	--color-orange: var(--color-orange-400);
+
+	--color-green-50: #ecfdf5;
+	--color-green-100: #d1fae5;
+	--color-green-200: #a7f3d0;
+	--color-green-300: #6ee7b7;
+	--color-green-400: #34d399;
+	--color-green-500: #10b981;
+	--color-green-600: #059669;
+	--color-green-700: #047857;
+	--color-green-800: #065f46;
+	--color-green-900: #064e3b;
+	--color-green-950: #022c22;
+	--color-green: var(--color-green-400);
+
+	--color-blue-50: #f0f9ff;
+	--color-blue-100: #e0f2fe;
+	--color-blue-200: #bae6fd;
+	--color-blue-300: #7dd3fc;
+	--color-blue-400: #38bdf8;
+	--color-blue-500: #0ea5e9;
+	--color-blue-600: #0284c7;
+	--color-blue-700: #0369a1;
+	--color-blue-800: #075985;
+	--color-blue-900: #0c4a6e;
+	--color-blue-950: #082f49;
+	--color-blue: var(--color-blue-400);
+
+	--color-purple-50: #f5f3ff;
+	--color-purple-100: #ede9fe;
+	--color-purple-200: #ddd6fe;
+	--color-purple-300: #c4b5fd;
+	--color-purple-400: #a78bfa;
+	--color-purple-500: #8b5cf6;
+	--color-purple-600: #7c3aed;
+	--color-purple-700: #6d28d9;
+	--color-purple-800: #5b21b6;
+	--color-purple-900: #4c1d95;
+	--color-purple-950: #2e1065;
+	--color-purple: var(--color-purple-400);
+
+	--color-gray-50: #fafaf9;
+	--color-gray-100: #f5f5f4;
+	--color-gray-200: #e7e5e4;
+	--color-gray-300: #d6d3d1;
+	--color-gray-400: #a8a29e;
+	--color-gray-500: #8f8983;
+	--color-gray-600: #78716c;
+	--color-gray-700: #635d58;
+	--color-gray-800: #4f4a45;
+	--color-gray-900: #44403c;
+	--color-gray-950: #292524;
+	--color-gray: var(--color-gray-500);
+
+	--color-red-highlight: rgba(248, 113, 113, 0.25);
+	--color-orange-highlight: rgba(251, 146, 60, 0.25);
+	--color-green-highlight: rgba(52, 211, 153, 0.25);
+	--color-blue-highlight: rgba(56, 189, 248, 0.25);
+	--color-purple-highlight: rgba(167, 139, 250, 0.25);
+	--color-gray-highlight: rgba(168, 162, 158, 0.25);
+
+	--color-red-bg: rgba(248, 113, 113, 0.2);
+	--color-orange-bg: rgba(251, 146, 60, 0.2);
+	--color-green-bg: rgba(52, 211, 153, 0.2);
+	--color-blue-bg: rgba(56, 189, 248, 0.2);
+	--color-purple-bg: rgba(167, 139, 250, 0.2);
+
+	--color-text-primary: #fafaf9;
+	--color-text-default: #c9c2ba;
+	--color-text-tertiary: #a8a29e;
+	--color-button-border: rgba(214, 205, 194, 0.12);
+	--color-divider-dark: #6b635b;
+
+	--color-brand: #f59e0b;
+	--color-brand-highlight: rgba(245, 158, 11, 0.25);
+	--color-brand-shadow: rgba(245, 158, 11, 0.7);
+
+	--loading-bar-gradient: linear-gradient(to right, var(--color-brand) 0%, #fcd34d 100%);
+}
+
+.dark-mode:not(.oled-mode):not(.retro-mode),
+.dark:not(.oled-mode):not(.retro-mode),
+:root[data-theme='dark']:not(.oled-mode):not(.retro-mode) {
+	--surface-1: #181614;
+	--surface-1-5: #1b1917;
+	--surface-2: #1f1c1a;
+	--surface-2-5: #24211e;
+	--surface-3: #2a2724;
+	--surface-4: #37332f;
+	--surface-5: #46413c;
+
+	--brand-gradient-bg: linear-gradient(0deg, rgba(35, 24, 8, 0.2) 0%, rgba(137, 94, 25, 0.1) 100%);
+	--brand-gradient-strong-bg: linear-gradient(270deg, #110d07 10%, #1f1810 100%);
+	--brand-gradient-border: rgba(255, 214, 155, 0.08);
+	--brand-gradient-fade-out-color: linear-gradient(to bottom, rgba(31, 28, 26, 0), #1f1c1a 80%);
+
+	--splash-tint-top: rgba(131, 96, 36, 0.275);
+	--splash-tint-bottom: rgba(43, 28, 17, 0.5);
+	--splash-overlay: rgba(28, 24, 22, 0.64);
+}
+
+.oled-mode {
+	--brand-gradient-bg: linear-gradient(
+		0deg,
+		rgba(66, 48, 22, 0.15) 0%,
+		rgba(137, 94, 25, 0.1) 100%
+	);
+	--brand-gradient-strong-bg: linear-gradient(
+		270deg,
+		rgba(18, 14, 9, 0.6) 10%,
+		rgba(31, 24, 19, 0.5) 100%
+	);
+	--brand-gradient-border: rgba(255, 214, 155, 0.08);
+	--brand-gradient-fade-out-color: linear-gradient(to bottom, rgba(0, 0, 0, 0), #000000 80%);
+}
+
+.retro-mode {
+	--color-brand: #c98a17;
+	--color-brand-highlight: #4a3713;
+}
