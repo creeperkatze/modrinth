@@ -1,6 +1,20 @@
 <template>
-	<div v-if="data">
-		<Teleport to="#sidebar-teleport-target">
+	<ProjectPageShell
+		:platform="platform.id"
+		:project-id="projectIdentifier"
+		:title="projectBreadcrumbLabel"
+		:icon-url="projectIconUrl"
+		:to="projectBreadcrumbTo"
+		:platform-to="platformBrowseTo"
+		:install-context="projectInstallContext"
+		:tabs="projectTabs"
+		:error="data ? null : formatMessage(messages.loadError)"
+	>
+		<template #before-header>
+			<InstanceIndicator v-if="instance && !projectInstallContext" :instance="instance" />
+		</template>
+
+		<template #sidebar>
 			<ProjectSidebarCompatibility
 				v-if="!isServerProject"
 				:project="data"
@@ -44,194 +58,170 @@
 				:show-followers="isServerProject"
 				class="project-sidebar-section"
 			/>
-		</Teleport>
-		<div class="flex flex-col gap-4 p-6">
-			<div
-				v-if="projectInstallContext"
-				class="sticky top-0 z-20 -mx-6 -mt-6 rounded-tl-[--radius-xl] border-0 border-b border-solid bg-surface-1 px-3 py-4 border-surface-5"
+		</template>
+
+		<template #header>
+			<Teleport
+				v-if="appSettings.featureFlags.project_background"
+				to="#background-teleport-target"
 			>
-				<BrowseInstallHeader :install-context="projectInstallContext" />
-			</div>
-			<InstanceIndicator v-if="instance && !projectInstallContext" :instance="instance" />
-			<template v-if="data">
-				<Teleport
-					v-if="appSettings.featureFlags.project_background"
-					to="#background-teleport-target"
-				>
-					<ProjectBackgroundGradient :project="data" />
-				</Teleport>
-				<ProjectPageHeader
-					v-else
-					:project="data"
-					:project-v3="projectV3"
-					:show-status-badge="data.status !== 'approved'"
-					@contextmenu.prevent.stop="handleRightClick"
-					@category="(category) => router.push(`${projectSearchUrl}?f=categories:${category}`)"
-				>
-					<template #actions>
-						<template v-if="isServerProject">
-							<Button
-								v-if="serverPlaying"
-								type="colored"
-								color="red"
-								size="xl"
-								native-type="button"
-								@click="handleStopServer"
-							>
-								<StopCircleIcon />
-								{{ formatMessage(commonMessages.stopButton) }}
-							</Button>
-							<Button
-								v-else
-								type="colored"
-								color="brand"
-								size="xl"
-								native-type="button"
-								:disabled="serverInstallLoading"
-								@click="handleClickPlay"
-							>
-								<PlayIcon />
-								{{
-									serverInstallLoading
-										? formatMessage(commonMessages.installingLabel)
-										: formatMessage(commonMessages.playButton)
-								}}
-							</Button>
-							<IconButton
-								v-tooltip="formatMessage(commonMessages.addServerToInstanceButton)"
-								size="xl"
-								:label="formatMessage(commonMessages.addServerToInstanceButton)"
-								native-type="button"
-								@click="handleAddServerToInstance"
-							>
-								<PlusIcon />
-							</IconButton>
-							<TeleportOverflowMenu
-								type="quiet"
-								size="xl"
-								:label="formatMessage(messages.moreOptions)"
-								:options="serverProjectHeaderMoreActions"
-							>
-								<MoreVerticalIcon />
-							</TeleportOverflowMenu>
-						</template>
-						<template v-else>
-							<Button
-								v-if="showSwitchVersion && onVersionsPage"
-								v-tooltip="formatMessage(messages.alreadyInstalled)"
-								size="xl"
-								native-type="button"
-								disabled
-							>
-								<CheckIcon />
-								{{ formatMessage(commonMessages.installedLabel) }}
-							</Button>
-							<Button
-								v-else-if="showSwitchVersion"
-								size="xl"
-								native-type="button"
-								@click="goToVersions"
-							>
-								<SwapIcon />
-								{{ formatMessage(messages.switchVersion) }}
-							</Button>
-							<Button
-								v-else
-								v-tooltip="
-									installButtonInstalled ? formatMessage(messages.alreadyInstalled) : undefined
-								"
-								type="colored"
-								color="brand"
-								size="xl"
-								native-type="button"
-								:disabled="installButtonDisabled"
-								@click="install(null)"
-							>
-								<component :is="installButtonIcon" :class="installButtonIconClass" />
-								{{
-									installButtonInstalled
-										? formatMessage(commonMessages.installedLabel)
-										: installButtonValidating
-											? formatMessage(commonMessages.validatingLabel)
-											: installButtonLoading
-												? formatMessage(commonMessages.installingLabel)
-												: serverProjectSelected
-													? formatMessage(commonMessages.selectedLabel)
-													: formatMessage(commonMessages.installButton)
-								}}
-							</Button>
-							<TeleportOverflowMenu
-								type="quiet"
-								size="xl"
-								:label="formatMessage(messages.moreOptions)"
-								:options="projectHeaderMoreActions"
-							>
-								<MoreVerticalIcon />
-							</TeleportOverflowMenu>
-						</template>
+				<ProjectBackgroundGradient :project="data" />
+			</Teleport>
+			<ProjectPageHeader
+				v-else
+				:project="data"
+				:project-v3="projectV3"
+				:show-status-badge="data.status !== 'approved'"
+				@contextmenu.prevent.stop="handleRightClick"
+				@category="(category) => router.push(`${projectSearchUrl}?f=categories:${category}`)"
+			>
+				<template #actions>
+					<template v-if="isServerProject">
+						<Button
+							v-if="serverPlaying"
+							type="colored"
+							color="red"
+							size="xl"
+							native-type="button"
+							@click="handleStopServer"
+						>
+							<StopCircleIcon />
+							{{ formatMessage(commonMessages.stopButton) }}
+						</Button>
+						<Button
+							v-else
+							type="colored"
+							color="brand"
+							size="xl"
+							native-type="button"
+							:disabled="serverInstallLoading"
+							@click="handleClickPlay"
+						>
+							<PlayIcon />
+							{{
+								serverInstallLoading
+									? formatMessage(commonMessages.installingLabel)
+									: formatMessage(commonMessages.playButton)
+							}}
+						</Button>
+						<IconButton
+							v-tooltip="formatMessage(commonMessages.addServerToInstanceButton)"
+							size="xl"
+							:label="formatMessage(commonMessages.addServerToInstanceButton)"
+							native-type="button"
+							@click="handleAddServerToInstance"
+						>
+							<PlusIcon />
+						</IconButton>
+						<TeleportOverflowMenu
+							type="quiet"
+							size="xl"
+							:label="formatMessage(messages.moreOptions)"
+							:options="serverProjectHeaderMoreActions"
+						>
+							<MoreVerticalIcon />
+						</TeleportOverflowMenu>
 					</template>
-				</ProjectPageHeader>
-				<NavTabs
-					:links="[
-						{
-							label: formatMessage(messages.descriptionTab),
-							href: projectDescriptionHref,
-						},
-						{
-							label: formatMessage(messages.versionsTab),
-							href: versionsHref,
-							subpages: ['version'],
-							shown: projectV3?.minecraft_server == null,
-						},
-						{
-							label: formatMessage(messages.galleryTab),
-							href: projectGalleryHref,
-							shown: data.gallery.length > 0,
-						},
-					]"
-				/>
-				<RouterView
-					v-if="route.path.startsWith('/project')"
-					:project="data"
-					:versions="versions"
-					:members="members"
-					:instance="instance"
-					:install="install"
-					:installed="installed"
-					:installing="installing"
-					:installed-version="installedVersion"
-				/>
-			</template>
-			<template v-else>{{ formatMessage(messages.loadError) }}</template>
-		</div>
-		<SelectedProjectsFloatingBar
-			v-if="projectInstallContext"
-			:install-context="projectInstallContext"
+					<template v-else>
+						<Button
+							v-if="showSwitchVersion && onVersionsPage"
+							v-tooltip="formatMessage(messages.alreadyInstalled)"
+							size="xl"
+							native-type="button"
+							disabled
+						>
+							<CheckIcon />
+							{{ formatMessage(commonMessages.installedLabel) }}
+						</Button>
+						<Button
+							v-else-if="showSwitchVersion"
+							size="xl"
+							native-type="button"
+							@click="goToVersions"
+						>
+							<SwapIcon />
+							{{ formatMessage(messages.switchVersion) }}
+						</Button>
+						<Button
+							v-else
+							v-tooltip="
+								installButtonInstalled ? formatMessage(messages.alreadyInstalled) : undefined
+							"
+							type="colored"
+							color="brand"
+							size="xl"
+							native-type="button"
+							:disabled="installButtonDisabled"
+							@click="install(null)"
+						>
+							<component :is="installButtonIcon" :class="installButtonIconClass" />
+							{{
+								installButtonInstalled
+									? formatMessage(commonMessages.installedLabel)
+									: installButtonValidating
+										? formatMessage(commonMessages.validatingLabel)
+										: installButtonLoading
+											? formatMessage(commonMessages.installingLabel)
+											: serverProjectSelected
+												? formatMessage(commonMessages.selectedLabel)
+												: formatMessage(commonMessages.installButton)
+							}}
+						</Button>
+						<TeleportOverflowMenu
+							type="quiet"
+							size="xl"
+							:label="formatMessage(messages.moreOptions)"
+							:options="projectHeaderMoreActions"
+						>
+							<MoreVerticalIcon />
+						</TeleportOverflowMenu>
+					</template>
+				</template>
+			</ProjectPageHeader>
+		</template>
+
+		<RouterView
+			v-if="route.path.startsWith(platform.projectPathPrefix)"
+			:project="data"
+			:versions="versions"
+			:members="members"
+			:instance="instance"
+			:install="install"
+			:installed="installed"
+			:installing="installing"
+			:installed-version="installedVersion"
 		/>
-		<ContextMenu ref="options" :label="formatMessage(messages.projectActionsLabel)">
-			<template #open_link="{ option }">
-				<GlobeIcon /> {{ option.label }} <ExternalIcon />
-			</template>
-		</ContextMenu>
-		<CreationFlowModal
-			v-if="serverInstallContent.isServerContext.value && data?.project_type === 'modpack'"
-			ref="serverSetupModalRef"
-			:type="
-				serverInstallContent.serverFlowFrom.value === 'reset-server'
-					? 'reset-server'
-					: 'server-onboarding'
-			"
-			:available-loaders="['vanilla', 'fabric', 'neoforge', 'forge', 'quilt', 'paper', 'purpur']"
-			:show-snapshot-toggle="true"
-			:on-back="serverInstallContent.onServerFlowBack"
-			:search-modpacks="serverInstallContent.searchServerModpacks"
-			:get-project-versions="serverInstallContent.getServerProjectVersions"
-			:get-loader-manifest="getLoaderManifest"
-			@hide="() => {}"
-			@browse-modpacks="() => {}"
-			@create="serverInstallContent.handleServerModpackFlowCreate"
-		/>
-	</div>
+
+		<template #after>
+			<SelectedProjectsFloatingBar
+				v-if="projectInstallContext"
+				:install-context="projectInstallContext"
+			/>
+			<ContextMenu ref="options" :label="formatMessage(messages.projectActionsLabel)">
+				<template #open_link="{ option }">
+					<GlobeIcon /> {{ option.label }} <ExternalIcon />
+				</template>
+			</ContextMenu>
+			<CreationFlowModal
+				v-if="serverInstallContent.isServerContext.value && data?.project_type === 'modpack'"
+				ref="serverSetupModalRef"
+				:type="
+					serverInstallContent.serverFlowFrom.value === 'reset-server'
+						? 'reset-server'
+						: 'server-onboarding'
+				"
+				:available-loaders="['vanilla', 'fabric', 'neoforge', 'forge', 'quilt', 'paper', 'purpur']"
+				:show-snapshot-toggle="true"
+				:on-back="serverInstallContent.onServerFlowBack"
+				:search-modpacks="serverInstallContent.searchServerModpacks"
+				:get-project-versions="serverInstallContent.getServerProjectVersions"
+				:get-loader-manifest="getLoaderManifest"
+				@hide="() => {}"
+				@browse-modpacks="() => {}"
+				@create="serverInstallContent.handleServerModpackFlowCreate"
+			/>
+		</template>
+	</ProjectPageShell>
 </template>
 
 <script setup>
@@ -251,7 +241,6 @@ import {
 	StopCircleIcon,
 } from '@modrinth/assets'
 import {
-	BrowseInstallHeader,
 	Button,
 	commonMessages,
 	ContextMenu,
@@ -260,7 +249,6 @@ import {
 	getTargetInstallPreferences,
 	IconButton,
 	injectNotificationManager,
-	NavTabs,
 	ProjectBackgroundGradient,
 	ProjectPageHeader,
 	ProjectSidebarCompatibility,
@@ -283,6 +271,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { SwapIcon } from '@/assets/icons/index.js'
 import InstanceIndicator from '@/components/ui/InstanceIndicator.vue'
+import ProjectPageShell from '@/components/ui/project-page/ProjectPageShell.vue'
 import {
 	fetchCachedServerStatus,
 	getFreshCachedServerStatus,
@@ -308,7 +297,7 @@ import { get_loader_versions as getLoaderManifest } from '@/helpers/metadata'
 import { get_by_instance_id } from '@/helpers/process'
 import { get_categories, get_game_versions, get_loaders } from '@/helpers/tags'
 import { getServerAddress } from '@/helpers/worlds'
-import { provideBreadcrumbParent, useBreadcrumb } from '@/providers/breadcrumbs'
+import { CONTENT_PLATFORMS, projectBrowseRoute } from '@/platforms'
 import { injectContentInstall } from '@/providers/content-install'
 import { injectServerInstall } from '@/providers/server-install'
 import { createServerInstallContent } from '@/providers/setup/server-install-content'
@@ -319,11 +308,12 @@ const { handleError } = injectNotificationManager()
 const { install: installVersion } = injectContentInstall()
 const route = useRoute()
 const router = useRouter()
+const platform = CONTENT_PLATFORMS.modrinth
 const displayedProjectRoute = shallowRef(router.currentRoute.value)
 watch(
 	() => router.currentRoute.value,
 	(nextRoute) => {
-		if (nextRoute.path.startsWith('/project/')) {
+		if (nextRoute.path.startsWith(platform.projectPathPrefix)) {
 			displayedProjectRoute.value = nextRoute
 		}
 	},
@@ -392,25 +382,13 @@ function getProjectBreadcrumbLabel(projectId) {
 }
 
 const projectBreadcrumbLabel = ref(getProjectBreadcrumbLabel(route.params.id))
-const projectBreadcrumb = useBreadcrumb({
-	slot: 'project',
-	id: () => `project:${String(displayedProjectRoute.value.params.id ?? '')}`,
-	label: projectBreadcrumbLabel,
-	visual: () => {
-		const identifier = String(displayedProjectRoute.value.params.id ?? '')
-		const loadedProject =
-			data.value?.id === identifier || data.value?.slug === identifier ? data.value : undefined
-		const project = loadedProject ?? getProjectBreadcrumbSummary(identifier)
-		return {
-			type: 'image',
-			src: project?.icon_url,
-			alt: projectBreadcrumbLabel.value,
-			tintBy: identifier,
-		}
-	},
-	to: projectBreadcrumbTo,
+const projectIdentifier = computed(() => String(displayedProjectRoute.value.params.id ?? ''))
+const projectIconUrl = computed(() => {
+	const identifier = projectIdentifier.value
+	const loadedProject =
+		data.value?.id === identifier || data.value?.slug === identifier ? data.value : undefined
+	return (loadedProject ?? getProjectBreadcrumbSummary(identifier))?.icon_url
 })
-provideBreadcrumbParent(projectBreadcrumb)
 
 const versions = shallowRef([])
 const members = shallowRef([])
@@ -487,6 +465,30 @@ const versionsHref = computed(() =>
 	buildProjectHref(`/project/${route.params.id}/versions`, instanceFilters.value),
 )
 const projectGalleryHref = computed(() => buildProjectHref(`/project/${route.params.id}/gallery`))
+const projectTabs = computed(() => [
+	{
+		label: formatMessage(messages.descriptionTab),
+		href: projectDescriptionHref.value,
+	},
+	{
+		label: formatMessage(messages.versionsTab),
+		href: versionsHref.value,
+		subpages: ['version'],
+		shown: projectV3.value?.minecraft_server == null,
+	},
+	{
+		label: formatMessage(messages.galleryTab),
+		href: projectGalleryHref.value,
+		shown: (data.value?.gallery.length ?? 0) > 0,
+	},
+])
+const platformBrowseTo = computed(() =>
+	projectBrowseRoute(
+		platform.id,
+		isServerProject.value ? 'server' : (data.value?.project_type ?? 'mod'),
+		displayedProjectRoute.value.query,
+	),
+)
 
 const projectBrowseBackUrl = computed(() => {
 	const browsePath = route.query.b
@@ -842,7 +844,7 @@ useAppEvent('process', (e) => {
 watch(
 	() => route.params.id,
 	async () => {
-		if (route.params.id && route.path.startsWith('/project')) {
+		if (route.params.id && route.path.startsWith(platform.projectPathPrefix)) {
 			await fetchProjectData()
 		}
 	},

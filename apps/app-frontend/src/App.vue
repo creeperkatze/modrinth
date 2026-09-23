@@ -167,6 +167,7 @@ import {
 	instanceListQueryOptions,
 	screenshotKeys,
 } from '@/pages/instance/query-options'
+import { isProjectPath } from '@/platforms'
 import {
 	appUpdateState,
 	downloadAvailableAppUpdate,
@@ -236,8 +237,7 @@ watch(
 const forceSidebar = computed(
 	() =>
 		route.path.startsWith('/browse') ||
-		route.path.startsWith('/project') ||
-		route.path.startsWith('/curseforge') ||
+		isProjectPath(route.path) ||
 		route.path.startsWith('/user'),
 )
 const sidebarVisible = computed(() => sidebarToggled.value || forceSidebar.value)
@@ -2105,21 +2105,18 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 				:is-primary="(route) => route.path === '/'"
 				:is-subpage="
 					() =>
-						(route.path.startsWith('/browse') ||
-							route.path.startsWith('/project') ||
-							route.path.startsWith('/curseforge')) &&
-						route.query.i
+						(route.path.startsWith('/browse') || isProjectPath(route.path)) && route.query.i
 				"
 			>
 				<PlayIcon class="ml-0.5" />
 			</NavButton>
 			<NavButton
 				v-tooltip.right="formatMessage(commonMessages.discoverContentLabel)"
-				to="/browse/modpack"
-				:is-primary="() => route.path.startsWith('/browse') && !route.query.i && !route.query.sid"
+				to="/discover"
+				:is-primary="() => route.path === '/discover' && !route.query.i"
 				:is-subpage="
 					(route) =>
-						(route.path.startsWith('/project') || route.path.startsWith('/curseforge')) &&
+						(route.path.startsWith('/browse') || isProjectPath(route.path)) &&
 						!route.query.i &&
 						!route.query.sid
 				"
@@ -2147,7 +2144,7 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 				:is-subpage="
 					(r) =>
 						(r.path.startsWith('/hosting/manage/') && r.path !== '/hosting/manage/') ||
-						((r.path.startsWith('/browse') || r.path.startsWith('/project')) && r.query.sid)
+						((r.path.startsWith('/browse') || isProjectPath(r.path)) && r.query.sid)
 				"
 			>
 				<ServerStackIcon />

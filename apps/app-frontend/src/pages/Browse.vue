@@ -3,7 +3,6 @@ import type { Labrinth } from '@modrinth/api-client'
 import {
 	CheckIcon,
 	CompassIcon,
-	CurseForgeIcon,
 	ExternalIcon,
 	GlobeIcon,
 	PlusIcon,
@@ -40,13 +39,11 @@ import { computed, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
 import type { LocationQuery } from 'vue-router'
 import { useRoute, useRouter } from 'vue-router'
 
-import ContentSourceSwitch from '@/components/ui/browse/ContentSourceSwitch.vue'
 import CurseForgeBrowse from '@/components/ui/browse/CurseForgeBrowse.vue'
 import { useAppServerBrowse } from '@/composables/browse/use-app-server-browse'
 import { useAppEvent } from '@/composables/use-app-event'
 import { useAppSettings } from '@/composables/use-app-settings.ts'
 import { get_project, get_search_results_v3, get_version_many } from '@/helpers/cache.js'
-import type { ContentSource } from '@/helpers/curseforge'
 import {
 	get_installed_project_ids as getInstalledProjectIds,
 	getInstanceIconUrl,
@@ -61,6 +58,8 @@ import {
 	instanceKeys,
 	instanceLinkedProjectQueryOptions,
 } from '@/pages/instance/query-options'
+import { PLATFORM_QUERY_PARAM, platformFromQuery } from '@/platforms'
+import { platformBreadcrumbDefinition } from '@/platforms/breadcrumbs'
 import {
 	type BreadcrumbDefinition,
 	type BreadcrumbHandle,
@@ -102,10 +101,6 @@ const breadcrumbMessages = defineMessages({
 		id: 'app.browse.discover-servers',
 		defaultMessage: 'Discover servers',
 	},
-	curseForge: {
-		id: 'app.curseforge.project.breadcrumb',
-		defaultMessage: 'CurseForge',
-	},
 })
 const breadcrumbLabel = computed(() => {
 	const browseRoute = displayedBrowseRoute.value
@@ -124,14 +119,7 @@ const breadcrumbLabel = computed(() => {
 const appSettings = useAppSettings()
 const browseRouteActive = computed(() => route.path.startsWith('/browse/'))
 
-const contentSource = computed<ContentSource>({
-	get: () => (displayedBrowseRoute.value.query.src === 'curseforge' ? 'curseforge' : 'modrinth'),
-	set: (source) => {
-		void router.replace({
-			query: { ...route.query, src: source === 'curseforge' ? source : undefined },
-		})
-	},
-})
+const browsePlatform = computed(() => platformFromQuery(displayedBrowseRoute.value.query))
 const serverSetupModalRef = ref<InstanceType<typeof CreationFlowModal> | null>(null)
 const serverInstallContent = createServerInstallContent({ serverSetupModalRef })
 provideServerInstallContent(serverInstallContent)
@@ -172,9 +160,9 @@ const {
 	markServerProjectInstalled,
 } = serverInstallContent
 
-const showContentSourceSwitch = computed(() => !isServerContext.value && !isFromWorlds.value)
+const platformBrowsingAvailable = computed(() => !isServerContext.value && !isFromWorlds.value)
 const curseforgeActive = computed(
-	() => showContentSourceSwitch.value && contentSource.value === 'curseforge',
+	() => platformBrowsingAvailable.value && browsePlatform.value === 'curseforge',
 )
 const modrinthSearchActive = computed(() => browseRouteActive.value && !curseforgeActive.value)
 
@@ -255,32 +243,31 @@ const breadcrumbDefinition = {
 	visual: { type: 'icon', component: CompassIcon },
 } satisfies BreadcrumbDefinition
 
-const curseForgeBreadcrumbDefinition = {
-	slot: 'source',
-	id: 'source:curseforge',
-	label: () => formatMessage(breadcrumbMessages.curseForge),
-	to: () => displayedBrowseRoute.value.fullPath,
-	visual: { type: 'icon', component: CurseForgeIcon },
+const discoverBreadcrumbDefinition = {
+	slot: 'discover',
+	id: 'discover',
+	label: () => formatMessage(commonMessages.discoverContentLabel),
+	to: () => {
+		const instanceId = displayedBrowseRoute.value.query.i
+		return { path: '/discover', query: typeof instanceId === 'string' ? { i: instanceId } : {} }
+	},
+	visual: { type: 'icon', component: CompassIcon },
 } satisfies BreadcrumbDefinition
+const browsePlatformBreadcrumbDefinition = platformBreadcrumbDefinition(
+	browsePlatform,
+	() => displayedBrowseRoute.value.fullPath,
+)
 
-function pushSourceBreadcrumb(parent: BreadcrumbHandle) {
-	const query = displayedBrowseRoute.value.query
-	if (query.src === 'curseforge' && query.from !== 'worlds') {
-		breadcrumbManager.push(curseForgeBreadcrumbDefinition, { parent })
-	}
+function pushPlatformBreadcrumbs(parent?: BreadcrumbHandle) {
+	const discoverBreadcrumb = parent
+		? breadcrumbManager.push(discoverBreadcrumbDefinition, { parent })
+		: breadcrumbManager.reset(discoverBreadcrumbDefinition)
+	breadcrumbManager.push(browsePlatformBreadcrumbDefinition, { parent: discoverBreadcrumb })
 }
 
 function syncBreadcrumbs() {
-	if (displayedBrowseRoute.value.query.i) {
-		const instanceBreadcrumb = breadcrumbManager.reset(instanceBreadcrumbDefinition)
-		const browseBreadcrumb = breadcrumbManager.push(breadcrumbDefinition, {
-			parent: instanceBreadcrumb,
-		})
-		pushSourceBreadcrumb(browseBreadcrumb)
-		return
-	}
-
-	if (displayedBrowseRoute.value.query.sid) {
+	const query = displayedBrowseRoute.value.query
+	if (query.sid) {
 		const serversBreadcrumb = breadcrumbManager.reset(serversBreadcrumbDefinition)
 		const serverBreadcrumb = breadcrumbManager.push(serverBreadcrumbDefinition, {
 			parent: serversBreadcrumb,
@@ -289,7 +276,15 @@ function syncBreadcrumbs() {
 		return
 	}
 
-	pushSourceBreadcrumb(breadcrumbManager.reset(breadcrumbDefinition))
+	if (query.from === 'worlds') {
+		const instanceBreadcrumb = breadcrumbManager.reset(instanceBreadcrumbDefinition)
+		breadcrumbManager.push(breadcrumbDefinition, { parent: instanceBreadcrumb })
+		return
+	}
+
+	pushPlatformBreadcrumbs(
+		query.i ? breadcrumbManager.reset(instanceBreadcrumbDefinition) : undefined,
+	)
 }
 
 watch(displayedBrowseRoute, syncBreadcrumbs, { immediate: true, flush: 'sync' })
@@ -741,7 +736,9 @@ const selectableProjectTypes = computed(() => {
 	if (route.query.ai) params.ai = route.query.ai
 	if (route.query.from) params.from = route.query.from
 	if (route.query.sid) params.sid = route.query.sid
-	if (route.query.src) params.src = route.query.src
+	if (route.query[PLATFORM_QUERY_PARAM]) {
+		params[PLATFORM_QUERY_PARAM] = route.query[PLATFORM_QUERY_PARAM]
+	}
 	if (effectiveServerWorldId.value) params.wid = effectiveServerWorldId.value
 
 	const queryString = new URLSearchParams(params as Record<string, string>).toString()
@@ -1201,7 +1198,7 @@ const searchState = useBrowseSearch({
 	active: modrinthSearchActive,
 	providedFilters: combinedProvidedFilters,
 	search,
-	persistentQueryParams: ['i', 'ai', 'shi', 'sid', 'wid', 'from', 'src'],
+	persistentQueryParams: ['i', 'ai', 'shi', 'sid', 'wid', 'from', PLATFORM_QUERY_PARAM],
 	getExtraQueryParams: () => ({
 		sid: serverIdQuery.value || undefined,
 		wid: effectiveServerWorldId.value || undefined,
@@ -1415,12 +1412,7 @@ provideBrowseManager({
 			@create="handleServerModpackFlowCreate"
 		/>
 		<Teleport v-if="browseRouteActive" to="#sidebar-teleport-target">
-			<ContentSourceSwitch v-if="curseforgeActive" v-model="contentSource" />
-			<BrowseSidebar v-else>
-				<template v-if="showContentSourceSwitch" #prepend>
-					<ContentSourceSwitch v-model="contentSource" />
-				</template>
-			</BrowseSidebar>
+			<BrowseSidebar v-if="!curseforgeActive" />
 		</Teleport>
 	</div>
 </template>

@@ -48,6 +48,11 @@ export default new createRouter({
 			],
 		},
 		{
+			path: '/discover',
+			name: 'Discover',
+			component: () => import('@/pages/Discover.vue'),
+		},
+		{
 			path: '/browse/:projectType',
 			name: 'Discover content',
 			component: () => import('@/pages/Browse.vue'),

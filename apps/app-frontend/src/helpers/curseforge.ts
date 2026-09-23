@@ -15,9 +15,6 @@ import { config } from '@/config'
 import { get_content_items, install_external_file, remove_project } from './instance'
 import type { ContentFileProjectType, InstanceLoader } from './types'
 
-/** Where the Browse page searches for content. */
-export type ContentSource = 'modrinth' | 'curseforge'
-
 export const MINECRAFT_GAME_ID = 432
 
 export type CurseForgeContentType = 'mod' | 'resourcepack' | 'shader' | 'datapack'

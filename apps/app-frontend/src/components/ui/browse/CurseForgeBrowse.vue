@@ -35,6 +35,7 @@ import {
 } from '@/helpers/curseforge'
 import { list as listInstances } from '@/helpers/instance'
 import type { GameInstance } from '@/helpers/types'
+import { CONTENT_PLATFORMS } from '@/platforms'
 
 type ProjectTypeTab = {
 	label: string
@@ -307,10 +308,10 @@ watch(
 )
 
 function projectLink(mod: Mod) {
-	return {
-		path: `/curseforge/${mod.id}`,
-		query: { ...(route.query.i ? { i: route.query.i } : {}), b: route.fullPath },
-	}
+	return CONTENT_PLATFORMS.curseforge.projectRoute(mod.id, {
+		...(route.query.i ? { i: route.query.i } : {}),
+		b: route.fullPath,
+	})
 }
 
 function isRestricted(mod: Mod) {

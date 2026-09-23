@@ -230,9 +230,6 @@
   "app.browse.back-to-instance": {
     "message": "Back to instance"
   },
-  "app.browse.content-source": {
-    "message": "Source"
-  },
   "app.browse.curseforge.all-categories": {
     "message": "All categories"
   },
@@ -383,17 +380,11 @@
   "app.curseforge.project.back-to-instance": {
     "message": "Back to instance"
   },
-  "app.curseforge.project.breadcrumb": {
-    "message": "CurseForge"
-  },
-  "app.curseforge.project.compatibility": {
-    "message": "Compatibility"
-  },
-  "app.curseforge.project.creators": {
-    "message": "Creators"
-  },
   "app.curseforge.project.details.created": {
     "message": "Created {date}"
+  },
+  "app.curseforge.project.details.downloads": {
+    "message": "{count, plural, one {# download} other {# downloads}}"
   },
   "app.curseforge.project.details.id": {
     "message": "Project ID {id}"
@@ -407,14 +398,8 @@
   "app.curseforge.project.download-on-curseforge.tooltip": {
     "message": "This project's author doesn't allow downloads from other apps"
   },
-  "app.curseforge.project.downloads": {
-    "message": "{count, plural, one {download} other {downloads}}"
-  },
   "app.curseforge.project.install-to": {
     "message": "Install to instance..."
-  },
-  "app.curseforge.project.links": {
-    "message": "Links"
   },
   "app.curseforge.project.links.issues": {
     "message": "Issues"
@@ -431,9 +416,6 @@
   "app.curseforge.project.load-error": {
     "message": "This CurseForge project could not be loaded."
   },
-  "app.curseforge.project.minecraft-versions": {
-    "message": "Minecraft: Java Edition"
-  },
   "app.curseforge.project.missing-api-key": {
     "message": "Set CURSEFORGE_API_KEY in packages/app-lib/.env and restart the app to view CurseForge projects."
   },
@@ -442,9 +424,6 @@
   },
   "app.curseforge.project.open-on-curseforge": {
     "message": "Open on CurseForge"
-  },
-  "app.curseforge.project.platforms": {
-    "message": "Platforms"
   },
   "app.curseforge.project.switch-version": {
     "message": "Switch version"
@@ -458,14 +437,17 @@
   "app.curseforge.project.tab.gallery": {
     "message": "Gallery"
   },
-  "app.curseforge.project.updated": {
-    "message": "Updated"
-  },
   "app.curseforge.restricted.body": {
     "message": "The authors of {names} don't allow downloads from other apps. Download them from CurseForge and add them to the instance."
   },
   "app.curseforge.restricted.title": {
     "message": "Some files must be downloaded manually"
+  },
+  "app.discover.browse-platform": {
+    "message": "Browse {platform}"
+  },
+  "app.discover.description": {
+    "message": "Choose a platform to browse content from."
   },
   "app.download-manager.active": {
     "message": "Active"
@@ -1573,6 +1555,33 @@
   },
   "app.notification.warning": {
     "message": "Warning"
+  },
+  "app.platforms.curseforge.description": {
+    "message": "Mods, resource packs, data packs and shaders from the CurseForge library."
+  },
+  "app.platforms.modrinth.description": {
+    "message": "Open source mods, modpacks, resource packs, data packs, shaders and servers."
+  },
+  "app.project-page.header.downloads": {
+    "message": "{count, plural, one {download} other {downloads}}"
+  },
+  "app.project-page.header.updated": {
+    "message": "Updated"
+  },
+  "app.project-page.sidebar.compatibility": {
+    "message": "Compatibility"
+  },
+  "app.project-page.sidebar.creators": {
+    "message": "Creators"
+  },
+  "app.project-page.sidebar.links": {
+    "message": "Links"
+  },
+  "app.project-page.sidebar.minecraft-versions": {
+    "message": "Minecraft: Java Edition"
+  },
+  "app.project-page.sidebar.platforms": {
+    "message": "Platforms"
   },
   "app.project.actions.label": {
     "message": "Project actions"

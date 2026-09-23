@@ -152,6 +152,7 @@ import { get as getSettings, set as setSettings } from '@/helpers/settings'
 import { set_synced_pack_enabled, syncedPackKeys } from '@/helpers/synced-packs'
 import type { CacheBehaviour } from '@/helpers/types'
 import { highlightModInInstance } from '@/helpers/utils.js'
+import { CONTENT_PLATFORMS, isContentPlatformId } from '@/platforms'
 import { type AppEventPayload, injectAppEvents } from '@/providers/app-events'
 import { injectContentInstall } from '@/providers/content-install'
 
@@ -1724,11 +1725,11 @@ provideContentManager({
 			},
 		projectLink: item.project?.id
 			? { path: `/project/${item.project.id}`, query: { i: instancePage.instanceId.value } }
-			: item.external_source?.platform === 'curseforge'
-				? {
-						path: `/curseforge/${item.external_source.project_id}`,
-						query: { i: instancePage.instanceId.value },
-					}
+			: item.external_source && isContentPlatformId(item.external_source.platform)
+				? CONTENT_PLATFORMS[item.external_source.platform].projectRoute(
+						item.external_source.project_id,
+						{ i: instancePage.instanceId.value },
+					)
 				: undefined,
 		version: item.version ?? {
 			id: item.external_source?.file_id ?? item.file_name,
