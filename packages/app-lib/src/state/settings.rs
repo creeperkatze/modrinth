@@ -1,11 +1,11 @@
-//! Theseus settings file
+//! Refract settings file
 
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Sqlite};
 use std::collections::HashMap;
 
 // Types
-/// Global Theseus settings
+/// Global Refract settings
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Settings {
     pub max_concurrent_downloads: usize,
@@ -437,7 +437,7 @@ impl Settings {
     }
 }
 
-/// Theseus theme
+/// Refract theme
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Theme {

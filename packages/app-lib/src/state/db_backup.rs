@@ -124,7 +124,7 @@ async fn open_read_only_db(db_path: &Path) -> crate::Result<SqliteConnection> {
 }
 
 pub fn app_db_backup_dir() -> crate::Result<PathBuf> {
-    if let Some(path) = std::env::var_os("THESEUS_DB_BACKUP_DIR") {
+    if let Some(path) = std::env::var_os("REFRACT_DB_BACKUP_DIR") {
         return Ok(PathBuf::from(path));
     }
 

@@ -1,7 +1,7 @@
 /*!
-# Theseus
+# refract_lib
 
-Theseus is a library which provides utilities for launching minecraft, creating Modrinth mod packs,
+refract_lib is the core library of Refract. It provides utilities for launching minecraft, creating Modrinth mod packs,
 and launching Modrinth mod packs
 */
 #![warn(unused_import_braces)]
@@ -32,11 +32,7 @@ pub use util::fetch::DownloadReason;
 
 pub fn launcher_user_agent() -> String {
     const LAUNCHER_BASE_USER_AGENT: &str =
-        concat!("modrinth/theseus/", env!("CARGO_PKG_VERSION"),);
+        concat!("refract/", env!("CARGO_PKG_VERSION"),);
 
-    format!(
-        "{} ({}; support@modrinth.com)",
-        LAUNCHER_BASE_USER_AGENT,
-        std::env::consts::OS
-    )
+    format!("{} ({})", LAUNCHER_BASE_USER_AGENT, std::env::consts::OS)
 }

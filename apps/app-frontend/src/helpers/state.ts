@@ -1,5 +1,5 @@
 /**
- * All theseus API calls return serialized values (both return values and errors);
+ * All backend API calls return serialized values (both return values and errors);
  * So, for example, addDefaultInstance creates a blank instance object, where the Rust struct is serialized,
  *  and deserialized into a usable JS object.
  */
@@ -28,7 +28,7 @@ export interface LoadingBar {
 
 export type OpeningCommand = Extract<AppEvent, { type: 'command' }>['payload']
 
-// Initialize the theseus API state
+// Initialize the backend API state
 // This should be called during the initializion/opening of the launcher
 export async function initialize_state(events: Channel<ArrayBuffer>) {
 	return await invoke<void>('initialize_state', { events })

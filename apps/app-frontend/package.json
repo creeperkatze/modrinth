@@ -1,5 +1,5 @@
 {
-	"name": "@modrinth/app-frontend",
+	"name": "@refract/app-frontend",
 	"private": true,
 	"version": "1.0.0-local",
 	"type": "module",

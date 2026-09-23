@@ -1,9 +1,9 @@
 use crate::api::Result;
 use dashmap::DashMap;
+use refract_lib::prelude::JavaVersion;
+use refract_lib::prelude::*;
 use std::path::PathBuf;
 use tauri::plugin::TauriPlugin;
-use theseus::prelude::JavaVersion;
-use theseus::prelude::*;
 
 pub fn init<R: tauri::Runtime>() -> TauriPlugin<R> {
     tauri::plugin::Builder::new("jre")

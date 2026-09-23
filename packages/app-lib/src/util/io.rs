@@ -338,7 +338,7 @@ pub async fn metadata(
         })
 }
 
-/// Gets a resource file from the executable. Returns `theseus::Result<(TempDir, PathBuf)>`.
+/// Gets a resource file from the executable. Returns `refract_lib::Result<(TempDir, PathBuf)>`.
 #[macro_export]
 macro_rules! get_resource_file {
     (directory: $relative_dir:expr, file: $file_name:expr) => {

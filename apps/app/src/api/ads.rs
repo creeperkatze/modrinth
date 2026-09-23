@@ -1,3 +1,4 @@
+use refract_lib::{AppEvent, EventState, settings};
 use std::collections::HashSet;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -5,7 +6,6 @@ use std::time::{Duration, Instant};
 use tauri::plugin::TauriPlugin;
 use tauri::{Manager, PhysicalPosition, PhysicalSize, Runtime};
 use tauri_plugin_opener::OpenerExt;
-use theseus::{AppEvent, EventState, settings};
 use tokio::sync::RwLock;
 
 pub struct AdsState {

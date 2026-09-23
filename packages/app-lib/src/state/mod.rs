@@ -1,4 +1,4 @@
-//! Theseus state management system
+//! Refract state management system
 use crate::util::fetch::{FetchSemaphore, IoSemaphore};
 use dashmap::DashMap;
 use std::sync::Arc;

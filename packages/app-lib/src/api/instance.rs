@@ -1,4 +1,4 @@
-//! Theseus instance management interface
+//! Refract instance management interface
 
 mod content;
 mod export_mrpack;

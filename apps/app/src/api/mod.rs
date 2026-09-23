@@ -43,11 +43,11 @@ pub type Result<T> = std::result::Result<T, TheseusSerializableError>;
 //     Serializable(),
 // }
 
-// Serializable error intermediary, so TheseusGuiError can be Serializable (eg: so that we can return theseus::Errors in Tauri directly)
+// Serializable error intermediary, so TheseusGuiError can be Serializable (eg: so that we can return refract_lib::Errors in Tauri directly)
 #[derive(Error, Debug)]
 pub enum TheseusSerializableError {
     #[error("{0}")]
-    Theseus(#[from] theseus::Error),
+    Theseus(#[from] refract_lib::Error),
 
     #[error("IO error: {0}")]
     IO(#[from] std::io::Error),
@@ -86,14 +86,14 @@ macro_rules! impl_serialize {
                 match self {
                     TheseusSerializableError::Theseus(theseus_error) => {
                         let unavailable_reason = match theseus_error.raw.as_ref() {
-                            theseus::ErrorKind::SharedInstanceUnavailable(reason) => Some(reason),
+                            refract_lib::ErrorKind::SharedInstanceUnavailable(reason) => Some(reason),
                             _ => None,
                         };
                         let code = match theseus_error.raw.as_ref() {
-                            theseus::ErrorKind::SharedInstanceUnavailable(_) => {
+                            refract_lib::ErrorKind::SharedInstanceUnavailable(_) => {
                                 Some("shared_instance_unavailable")
                             }
-                            theseus::ErrorKind::SharedInstancesApiError(_) => {
+                            refract_lib::ErrorKind::SharedInstancesApiError(_) => {
                                 Some("shared_instances_api_error")
                             }
                             _ => None,

@@ -1,4 +1,4 @@
-//! Theseus state management system
+//! Refract state management system
 use dashmap::DashMap;
 #[cfg(feature = "tauri")]
 use parking_lot::RwLock;

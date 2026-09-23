@@ -1,11 +1,11 @@
 use crate::api::Result;
 use crate::api::TheseusSerializableError;
 use crate::api::oauth_utils;
+use refract_lib::prelude::*;
 use tauri::Manager;
 use tauri::Runtime;
 use tauri::plugin::TauriPlugin;
 use tauri_plugin_opener::OpenerExt;
-use theseus::prelude::*;
 use tokio::sync::oneshot;
 
 pub fn init<R: tauri::Runtime>() -> TauriPlugin<R> {
@@ -54,7 +54,7 @@ pub async fn modrinth_login<R: Runtime>(
         .open_url(auth_request_uri, None::<&str>)
         .map_err(|e| {
             TheseusSerializableError::Theseus(
-                theseus::ErrorKind::OtherError(format!(
+                refract_lib::ErrorKind::OtherError(format!(
                     "Failed to open auth request URI: {e}"
                 ))
                 .into(),
@@ -63,7 +63,7 @@ pub async fn modrinth_login<R: Runtime>(
 
     let Some(auth_code) = auth_code.await.unwrap()? else {
         return Err(TheseusSerializableError::Theseus(
-            theseus::ErrorKind::OtherError("Login canceled".into()).into(),
+            refract_lib::ErrorKind::OtherError("Login canceled".into()).into(),
         ));
     };
 
@@ -78,27 +78,27 @@ pub async fn modrinth_login<R: Runtime>(
 
 #[tauri::command]
 pub async fn logout() -> Result<()> {
-    Ok(theseus::mr_auth::logout().await?)
+    Ok(refract_lib::mr_auth::logout().await?)
 }
 
 #[tauri::command]
 pub async fn get() -> Result<Option<ModrinthCredentials>> {
-    Ok(theseus::mr_auth::get_credentials().await?)
+    Ok(refract_lib::mr_auth::get_credentials().await?)
 }
 
 #[tauri::command]
 pub async fn get_all() -> Result<Vec<ModrinthCredentials>> {
-    Ok(theseus::mr_auth::get_all().await?)
+    Ok(refract_lib::mr_auth::get_all().await?)
 }
 
 #[tauri::command]
 pub async fn set_active(user_id: String) -> Result<()> {
-    Ok(theseus::mr_auth::set_active(&user_id).await?)
+    Ok(refract_lib::mr_auth::set_active(&user_id).await?)
 }
 
 #[tauri::command]
 pub async fn remove_account(user_id: String) -> Result<()> {
-    Ok(theseus::mr_auth::remove_user(&user_id).await?)
+    Ok(refract_lib::mr_auth::remove_user(&user_id).await?)
 }
 
 #[tauri::command]

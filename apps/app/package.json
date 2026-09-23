@@ -1,5 +1,5 @@
 {
-	"name": "@modrinth/app",
+	"name": "@refract/app",
 	"scripts": {
 		"tauri": "tauri",
 		"build": "tauri build",
@@ -14,8 +14,8 @@
 		"@tauri-apps/cli": "2.5.0"
 	},
 	"dependencies": {
-		"@modrinth/app-frontend": "workspace:*",
-		"@modrinth/app-lib": "workspace:*",
-		"@modrinth/daedalus": "workspace:*"
+		"@modrinth/daedalus": "workspace:*",
+		"@refract/app-frontend": "workspace:*",
+		"@refract/app-lib": "workspace:*"
 	}
 }

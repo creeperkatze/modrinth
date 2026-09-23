@@ -166,6 +166,7 @@ rand_chacha = "=0.3.1"  # Locked on 0.3 until we can update rand to 0.9
 rdkafka = { version = "0.36.2", features = ["cmake-build"] }
 redis = "1.4.1"
 regex = "1.12.2"
+refract_lib = { path = "packages/app-lib" }
 reqwest = { version = "0.12.24", default-features = false }
 rgb = "0.8.52"
 rust_decimal = { version = "1.39.0", features = ["serde-with-float", "serde-with-str"] }
@@ -223,7 +224,6 @@ tauri-plugin-updater = { git = "https://github.com/modrinth/plugins-workspace", 
 ] }
 tauri-plugin-window-state = "2.4.0"
 tempfile = "3.23.0"
-theseus = { path = "packages/app-lib" }
 thiserror = "2.0.17"
 tikv-jemalloc-ctl = "0.6.0"
 tikv-jemallocator = "0.6.0"

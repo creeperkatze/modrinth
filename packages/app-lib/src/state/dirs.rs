@@ -1,4 +1,4 @@
-//! Theseus directory information
+//! Refract directory information
 pub(crate) mod move_app_directory;
 use crate::LoadingBarType;
 use crate::event::emit::{emit_loading, init_loading};
@@ -34,11 +34,11 @@ impl DirectoryInfo {
     // Get the settings directory
     // init() is not needed for this function
     pub fn initial_settings_dir_path(app_identifier: &str) -> Option<PathBuf> {
-        Self::env_path("THESEUS_CONFIG_DIR")
+        Self::env_path("REFRACT_CONFIG_DIR")
             .or_else(|| Some(dirs::data_dir()?.join(app_identifier)))
     }
 
-    /// Get all paths needed for Theseus to operate properly
+    /// Get all paths needed for Refract to operate properly
     #[tracing::instrument]
     pub async fn init(
         config_dir: Option<String>,
@@ -51,7 +51,7 @@ impl DirectoryInfo {
 
         fs::create_dir_all(&settings_dir).await.map_err(|err| {
             crate::ErrorKind::FSError(format!(
-                "Error creating Theseus config directory: {err}"
+                "Error creating Refract config directory: {err}"
             ))
         })?;
 
@@ -202,7 +202,7 @@ impl DirectoryInfo {
             .map(|d| d.join(LAUNCHER_LOGS_FOLDER_NAME))
     }
 
-    /// Get the cache directory for Theseus
+    /// Get the cache directory for Refract
     #[inline]
     pub fn caches_dir(&self) -> PathBuf {
         self.config_dir.join(CACHES_FOLDER_NAME)

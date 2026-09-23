@@ -1,10 +1,10 @@
 [package]
-name = "theseus_playground"
+name = "refract_playground"
 edition.workspace = true
 
 [dependencies]
 enumset = { workspace = true }
-theseus = { workspace = true, features = ["cli"] }
+refract_lib = { workspace = true, features = ["cli"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 
 [lints]

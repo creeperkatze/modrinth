@@ -1,6 +1,6 @@
 use crate::api::Result;
+use refract_lib::prelude::*;
 use tauri::Runtime;
-use theseus::prelude::*;
 
 pub fn init<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
     tauri::plugin::Builder::new("settings")

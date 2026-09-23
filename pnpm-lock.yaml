@@ -64,15 +64,15 @@ importers:
 
   apps/app:
     dependencies:
-      '@modrinth/app-frontend':
-        specifier: workspace:*
-        version: link:../app-frontend
-      '@modrinth/app-lib':
-        specifier: workspace:*
-        version: link:../../packages/app-lib
       '@modrinth/daedalus':
         specifier: workspace:*
         version: link:../../packages/daedalus
+      '@refract/app-frontend':
+        specifier: workspace:*
+        version: link:../app-frontend
+      '@refract/app-lib':
+        specifier: workspace:*
+        version: link:../../packages/app-lib
     devDependencies:
       '@tauri-apps/cli':
         specifier: 2.5.0

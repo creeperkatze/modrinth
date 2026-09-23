@@ -1,17 +1,17 @@
 use crate::api::Result;
 use crate::api::instance::InstanceLink;
-use serde::Deserialize;
-use std::path::PathBuf;
-use theseus::data::ModLoader;
-use theseus::install::{
+use refract_lib::data::ModLoader;
+use refract_lib::install::{
     InstallJobSnapshot, InstallModpackPreview, InstallPostInstallEdit,
 };
-use theseus::instance::{
+use refract_lib::instance::{
     SharedInstanceInstallPreview, SharedInstanceInviteInstallPreview,
     SharedInstanceUpdatePreview,
 };
-use theseus::pack::import::ImportLauncherType;
-use theseus::pack::install_from::CreatePackLocation;
+use refract_lib::pack::import::ImportLauncherType;
+use refract_lib::pack::install_from::CreatePackLocation;
+use serde::Deserialize;
+use std::path::PathBuf;
 use uuid::Uuid;
 
 pub fn init<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
@@ -49,7 +49,7 @@ pub struct InstallCreateInstanceRequest {
     pub loader: ModLoader,
     pub loader_version: Option<String>,
     pub icon_path: Option<String>,
-    pub icon_config: Option<theseus::data::InstanceIconConfig>,
+    pub icon_config: Option<refract_lib::data::InstanceIconConfig>,
     pub link: Option<InstanceLink>,
 }
 
@@ -80,14 +80,17 @@ impl InstallPostInstallEditRequest {
 pub async fn install_get_modpack_preview(
     location: CreatePackLocation,
 ) -> Result<InstallModpackPreview> {
-    Ok(theseus::pack::install_from::get_instance_from_pack(location).await?)
+    Ok(
+        refract_lib::pack::install_from::get_instance_from_pack(location)
+            .await?,
+    )
 }
 
 #[tauri::command]
 pub async fn install_create_instance(
     request: InstallCreateInstanceRequest,
 ) -> Result<InstallJobSnapshot> {
-    Ok(theseus::install::create_instance(
+    Ok(refract_lib::install::create_instance(
         request.name.trim().to_string(),
         request.game_version,
         request.loader,
@@ -96,7 +99,7 @@ pub async fn install_create_instance(
         request.icon_config,
         match request.link {
             Some(link) => link.into_core()?,
-            None => theseus::data::InstanceLink::Unmanaged,
+            None => refract_lib::data::InstanceLink::Unmanaged,
         },
     )
     .await?)
@@ -107,7 +110,7 @@ pub async fn install_create_modpack_instance(
     location: CreatePackLocation,
     post_install_edit: Option<InstallPostInstallEditRequest>,
 ) -> Result<InstallJobSnapshot> {
-    Ok(theseus::install::create_modpack_instance(
+    Ok(refract_lib::install::create_modpack_instance(
         location,
         post_install_edit.map(|edit| edit.into_core()).transpose()?,
     )
@@ -119,7 +122,7 @@ pub async fn install_get_shared_instance_preview(
     shared_instance_id: String,
     name: String,
 ) -> Result<SharedInstanceInstallPreview> {
-    Ok(theseus::instance::get_shared_instance_install_preview(
+    Ok(refract_lib::instance::get_shared_instance_install_preview(
         &shared_instance_id,
         name,
     )
@@ -131,7 +134,7 @@ pub async fn install_accept_shared_instance_invite(
     invite_id: String,
 ) -> Result<SharedInstanceInviteInstallPreview> {
     Ok(
-        theseus::instance::accept_shared_instance_invite_for_install(
+        refract_lib::instance::accept_shared_instance_invite_for_install(
             &invite_id,
         )
         .await?,
@@ -143,7 +146,7 @@ pub async fn install_get_shared_instance_update_preview(
     instance_id: String,
 ) -> Result<Option<SharedInstanceUpdatePreview>> {
     Ok(
-        theseus::instance::get_shared_instance_update_preview(&instance_id)
+        refract_lib::instance::get_shared_instance_update_preview(&instance_id)
             .await?,
     )
 }
@@ -157,7 +160,7 @@ pub async fn install_shared_instance(
     server_manager_icon_url: Option<String>,
     instance_icon_url: Option<String>,
 ) -> Result<InstallJobSnapshot> {
-    Ok(theseus::instance::install_shared_instance(
+    Ok(refract_lib::instance::install_shared_instance(
         &shared_instance_id,
         name,
         manager_id,
@@ -172,7 +175,7 @@ pub async fn install_shared_instance(
 pub async fn install_update_shared_instance(
     instance_id: String,
 ) -> Result<InstallJobSnapshot> {
-    Ok(theseus::instance::update_shared_instance(&instance_id).await?)
+    Ok(refract_lib::instance::update_shared_instance(&instance_id).await?)
 }
 
 #[tauri::command]
@@ -181,7 +184,7 @@ pub async fn install_import_instance(
     base_path: PathBuf,
     instance_folder: String,
 ) -> Result<InstallJobSnapshot> {
-    Ok(theseus::install::import_instance(
+    Ok(refract_lib::install::import_instance(
         launcher_type,
         base_path,
         instance_folder,
@@ -193,7 +196,7 @@ pub async fn install_import_instance(
 pub async fn install_duplicate_instance(
     source_instance_id: String,
 ) -> Result<InstallJobSnapshot> {
-    Ok(theseus::install::duplicate_instance(source_instance_id).await?)
+    Ok(refract_lib::install::duplicate_instance(source_instance_id).await?)
 }
 
 #[tauri::command]
@@ -201,7 +204,10 @@ pub async fn install_existing_instance(
     instance_id: String,
     force: bool,
 ) -> Result<InstallJobSnapshot> {
-    Ok(theseus::install::install_existing_instance(instance_id, force).await?)
+    Ok(
+        refract_lib::install::install_existing_instance(instance_id, force)
+            .await?,
+    )
 }
 
 #[tauri::command]
@@ -210,7 +216,7 @@ pub async fn install_pack_to_existing_instance(
     location: CreatePackLocation,
     post_install_edit: Option<InstallPostInstallEditRequest>,
 ) -> Result<InstallJobSnapshot> {
-    Ok(theseus::install::install_pack_to_existing_instance(
+    Ok(refract_lib::install::install_pack_to_existing_instance(
         instance_id,
         location,
         post_install_edit.map(|edit| edit.into_core()).transpose()?,
@@ -222,40 +228,40 @@ pub async fn install_pack_to_existing_instance(
 pub async fn install_job_list(
     include_finished: bool,
 ) -> Result<Vec<InstallJobSnapshot>> {
-    Ok(theseus::install::list_jobs(include_finished).await?)
+    Ok(refract_lib::install::list_jobs(include_finished).await?)
 }
 
 #[tauri::command]
 pub async fn install_job_get(job_id: Uuid) -> Result<InstallJobSnapshot> {
-    Ok(theseus::install::get_job(job_id).await?)
+    Ok(refract_lib::install::get_job(job_id).await?)
 }
 
 #[tauri::command]
 pub async fn install_job_retry(job_id: Uuid) -> Result<InstallJobSnapshot> {
-    Ok(theseus::install::retry_job(job_id).await?)
+    Ok(refract_lib::install::retry_job(job_id).await?)
 }
 
 #[tauri::command]
 pub async fn install_job_pause(job_id: Uuid) -> Result<InstallJobSnapshot> {
-    Ok(theseus::install::pause_job(job_id).await?)
+    Ok(refract_lib::install::pause_job(job_id).await?)
 }
 
 #[tauri::command]
 pub async fn install_job_resume(job_id: Uuid) -> Result<InstallJobSnapshot> {
-    Ok(theseus::install::resume_job(job_id).await?)
+    Ok(refract_lib::install::resume_job(job_id).await?)
 }
 
 #[tauri::command]
 pub async fn install_job_cancel(job_id: Uuid) -> Result<InstallJobSnapshot> {
-    Ok(theseus::install::cancel_job(job_id).await?)
+    Ok(refract_lib::install::cancel_job(job_id).await?)
 }
 
 #[tauri::command]
 pub async fn install_job_dismiss(job_id: Uuid) -> Result<()> {
-    Ok(theseus::install::dismiss_job(job_id).await?)
+    Ok(refract_lib::install::dismiss_job(job_id).await?)
 }
 
 #[tauri::command]
 pub async fn install_job_support_details(job_id: Uuid) -> Result<String> {
-    Ok(theseus::install::job_support_details(job_id).await?)
+    Ok(refract_lib::install::job_support_details(job_id).await?)
 }

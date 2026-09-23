@@ -1,8 +1,8 @@
 use crate::api::Result;
 use chrono::{Duration, Utc};
+use refract_lib::prelude::*;
 use tauri::plugin::TauriPlugin;
 use tauri::{Manager, Runtime, UserAttentionType};
-use theseus::prelude::*;
 
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     tauri::plugin::Builder::<R>::new("auth")
@@ -43,7 +43,7 @@ pub async fn login<R: Runtime>(
         "signin",
         tauri::WebviewUrl::External(flow.auth_request_uri.parse().map_err(
             |_| {
-                theseus::ErrorKind::OtherError(
+                refract_lib::ErrorKind::OtherError(
                     "Error parsing auth redirect URL".to_string(),
                 )
                 .as_error()

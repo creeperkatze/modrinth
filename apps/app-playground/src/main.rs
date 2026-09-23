@@ -5,14 +5,14 @@
 )]
 
 use enumset::EnumSet;
-use theseus::prelude::*;
-use theseus::worlds::get_recent_worlds;
+use refract_lib::prelude::*;
+use refract_lib::worlds::get_recent_worlds;
 
 // A simple Rust implementation of the authentication run
 // 1) call the authenticate_begin_flow() function to get the URL to open (like you would in the frontend)
 // 2) open the URL in a browser
 // 3) call the authenticate_await_complete_flow() function to get the credentials (like you would in the frontend)
-pub async fn authenticate_run() -> theseus::Result<Credentials> {
+pub async fn authenticate_run() -> refract_lib::Result<Credentials> {
     println!("A browser window will now open, follow the login flow there.");
     let login = minecraft_auth::begin_login().await?;
 
@@ -36,10 +36,10 @@ pub async fn authenticate_run() -> theseus::Result<Credentials> {
 }
 
 #[tokio::main]
-async fn main() -> theseus::Result<()> {
+async fn main() -> refract_lib::Result<()> {
     println!("Starting.");
 
-    let _log_guard = theseus::start_logger("ModrinthApp");
+    let _log_guard = refract_lib::start_logger("ModrinthApp");
 
     // Initialize state
     State::init("ModrinthApp".to_owned()).await?;

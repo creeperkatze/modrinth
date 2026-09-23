@@ -30,7 +30,7 @@
 		// Running Clippy and tests on a Tauri application requires
 		// the frontend to be built at least once first
 		"lint": {
-			"dependsOn": ["@modrinth/app-frontend#build"],
+			"dependsOn": ["@refract/app-frontend#build"],
 			"inputs": [
 				"$TURBO_DEFAULT$",
 				"$TURBO_ROOT$/Cargo.toml",
@@ -52,7 +52,7 @@
 			]
 		},
 		"test": {
-			"dependsOn": ["@modrinth/app-frontend#build"],
+			"dependsOn": ["@refract/app-frontend#build"],
 			"inputs": [
 				"$TURBO_DEFAULT$",
 				"$TURBO_ROOT$/Cargo.toml",

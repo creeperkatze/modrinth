@@ -1,4 +1,4 @@
-//! Theseus settings management interface
+//! Refract settings management interface
 
 pub use crate::state::content_store::{StoreUsage, StoreVerification};
 pub use crate::{

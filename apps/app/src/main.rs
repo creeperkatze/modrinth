@@ -5,11 +5,11 @@
 #![recursion_limit = "256"]
 
 use native_dialog::{DialogBuilder, MessageLevel};
+use refract_lib::prelude::*;
 use std::env;
 use std::sync::atomic::Ordering;
 use tauri::{Listener, Manager};
 use tauri_plugin_fs::FsExt;
-use theseus::prelude::*;
 
 mod api;
 
@@ -29,7 +29,7 @@ async fn initialize_state(
     events: tauri::ipc::Channel<tauri::ipc::InvokeResponseBody>,
 ) -> api::Result<()> {
     tracing::info!("Initializing app event state...");
-    theseus::EventState::init(app.clone(), events).await?;
+    refract_lib::EventState::init(app.clone(), events).await?;
 
     tracing::info!("Initializing app state...");
     State::init(app.config().identifier.clone()).await?;
@@ -89,7 +89,7 @@ pub use updater_impl_noop::*;
 #[tauri::command]
 async fn toggle_decorations(b: bool, window: tauri::Window) -> api::Result<()> {
     window.set_decorations(b).map_err(|e| {
-        theseus::Error::from(theseus::ErrorKind::OtherError(format!(
+        refract_lib::Error::from(refract_lib::ErrorKind::OtherError(format!(
             "Failed to toggle decorations: {e}"
         )))
     })?;
@@ -116,7 +116,7 @@ async fn set_restart_after_pending_update(
 // ie: deep links or filepaths for .mrpacks
 fn main() {
     #[cfg(feature = "export-app-events")]
-    theseus::export_app_event_bindings(
+    refract_lib::export_app_event_bindings(
         std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("../app-frontend/src/generated/app-events"),
     )
@@ -126,22 +126,23 @@ fn main() {
         tracing is set basd on the environment variable RUST_LOG=xxx, depending on the amount of logs to show
             ERROR > WARN > INFO > DEBUG > TRACE
         eg. RUST_LOG=info will show info, warn, and error logs
-            RUST_LOG="theseus=trace" will show *all* messages but from theseus only (and not dependencies using similar crates)
-            RUST_LOG="theseus=trace" will show *all* messages but from theseus only (and not dependencies using similar crates)
+            RUST_LOG="refract_lib=trace" will show *all* messages but from refract_lib only (and not dependencies using similar crates)
+            RUST_LOG="refract_lib=trace" will show *all* messages but from refract_lib only (and not dependencies using similar crates)
 
         Error messages returned to Tauri will display as traced error logs if they return an error.
         This will also include an attached span trace if the error is from a tracing error, and the level is set to info, debug, or trace
 
         on unix:
-            RUST_LOG="theseus=trace" {run command}
+            RUST_LOG="refract_lib=trace" {run command}
 
     */
 
     let tauri_context = tauri::generate_context!();
 
-    let _log_guard = theseus::start_logger(&tauri_context.config().identifier);
+    let _log_guard =
+        refract_lib::start_logger(&tauri_context.config().identifier);
 
-    tracing::info!("Initialized tracing subscriber. Loading Modrinth App!");
+    tracing::info!("Initialized tracing subscriber. Loading Refract!");
 
     let mut builder = tauri::Builder::default();
 
@@ -154,8 +155,8 @@ fn main() {
 
     #[cfg(feature = "updater")]
     {
+        use refract_lib::launcher_user_agent;
         use tauri_plugin_http::reqwest::header::{HeaderValue, USER_AGENT};
-        use theseus::launcher_user_agent;
         builder = builder.plugin(
             tauri_plugin_updater::Builder::new()
                 .header(
@@ -296,7 +297,7 @@ fn main() {
 
                 if matches!(&event, tauri::RunEvent::ExitRequested { .. })
                     && let Err(error) = tauri::async_runtime::block_on(
-                        theseus::minecraft_skins::flush_pending_skin_change(),
+                        refract_lib::minecraft_skins::flush_pending_skin_change(),
                     )
                 {
                     tracing::warn!(
@@ -315,7 +316,7 @@ fn main() {
                     if let Some((update, data)) = &*update_data.0.lock().unwrap()
                     {
                         fn set_changelog_toast(version: Option<String>) {
-                            let toast_result: theseus::Result<()> = tauri::async_runtime::block_on(async move {
+                            let toast_result: refract_lib::Result<()> = tauri::async_runtime::block_on(async move {
                                 let mut settings = settings::get().await?;
                                 settings.pending_update_toast_for_version = version;
                                 settings::set(settings).await?;
@@ -412,7 +413,7 @@ fn main() {
                     DialogBuilder::message()
                         .set_level(MessageLevel::Error)
                         .set_title("Initialization error")
-                        .set_text("Your Microsoft Edge WebView2 installation is corrupt.\n\nMicrosoft Edge WebView2 is required to run Modrinth App.\n\nLearn how to repair it at https://support.modrinth.com/en/articles/8797765-corrupted-microsoft-edge-webview2-installation")
+                        .set_text("Your Microsoft Edge WebView2 installation is corrupt.\n\nMicrosoft Edge WebView2 is required to run Refract.\n\nLearn how to repair it at https://support.modrinth.com/en/articles/8797765-corrupted-microsoft-edge-webview2-installation")
                         .alert()
                         .show()
                         .unwrap();

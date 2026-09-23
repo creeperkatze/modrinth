@@ -31,9 +31,11 @@ pub struct ExtractDryRunResult {
 pub async fn file_read_dragged_file(path: String) -> Result<Vec<u8>> {
     let metadata = tokio::fs::metadata(&path).await?;
     if !metadata.is_file() {
-        return Err(theseus::Error::from(theseus::ErrorKind::OtherError(
-            "Dropped path is not a file".to_string(),
-        ))
+        return Err(refract_lib::Error::from(
+            refract_lib::ErrorKind::OtherError(
+                "Dropped path is not a file".to_string(),
+            ),
+        )
         .into());
     }
 
@@ -47,25 +49,26 @@ pub async fn file_extract_zip(
     override_conflicts: bool,
     dry_run: bool,
 ) -> Result<Option<ExtractDryRunResult>> {
-    theseus::instance::validate_instance_file_write(instance_id, file_path)
+    refract_lib::instance::validate_instance_file_write(instance_id, file_path)
         .await?;
     let parent = file_path
         .trim_start_matches('/')
         .rsplit_once('/')
         .map_or("", |(parent, _)| parent);
     let file_bytes =
-        theseus::instance::read_instance_file(instance_id, file_path).await?;
+        refract_lib::instance::read_instance_file(instance_id, file_path)
+            .await?;
     let zip_reader = ZipFileReader::with_tokio(Cursor::new(file_bytes))
         .await
         .map_err(|error| {
-        theseus::Error::from(theseus::ErrorKind::OtherError(format!(
+        refract_lib::Error::from(refract_lib::ErrorKind::OtherError(format!(
             "Failed to read zip file: {error}"
         )))
     })?;
     let mut entries = Vec::new();
     for (index, entry) in zip_reader.file().entries().iter().enumerate() {
         let name = entry.filename().as_str().map_err(|error| {
-            theseus::Error::from(theseus::ErrorKind::InputError(
+            refract_lib::Error::from(refract_lib::ErrorKind::InputError(
                 error.to_string(),
             ))
         })?;
@@ -73,9 +76,11 @@ pub async fn file_extract_zip(
             continue;
         }
         if name.starts_with('/') || name.contains('\\') {
-            return Err(theseus::Error::from(theseus::ErrorKind::InputError(
-                "Invalid archive path".to_string(),
-            ))
+            return Err(refract_lib::Error::from(
+                refract_lib::ErrorKind::InputError(
+                    "Invalid archive path".to_string(),
+                ),
+            )
             .into());
         }
         let target = if parent.is_empty() {
@@ -83,7 +88,7 @@ pub async fn file_extract_zip(
         } else {
             format!("{parent}/{name}")
         };
-        let resolved = theseus::instance::validate_instance_file_write(
+        let resolved = refract_lib::instance::validate_instance_file_write(
             instance_id,
             &target,
         )
@@ -109,7 +114,7 @@ pub async fn file_extract_zip(
         let mut bytes = Vec::new();
         let mut reader =
             zip_reader.reader_with_entry(index).await.map_err(|error| {
-                theseus::Error::from(theseus::ErrorKind::OtherError(
+                refract_lib::Error::from(refract_lib::ErrorKind::OtherError(
                     error.to_string(),
                 ))
             })?;
@@ -117,11 +122,11 @@ pub async fn file_extract_zip(
             .read_to_end_checked(&mut bytes)
             .await
             .map_err(|error| {
-                theseus::Error::from(theseus::ErrorKind::OtherError(
+                refract_lib::Error::from(refract_lib::ErrorKind::OtherError(
                     error.to_string(),
                 ))
             })?;
-        theseus::instance::write_instance_file(
+        refract_lib::instance::write_instance_file(
             instance_id,
             &path,
             &bytes,
@@ -136,13 +141,13 @@ pub async fn file_extract_zip(
 pub async fn file_list(
     instance_id: &str,
     path: &str,
-) -> Result<Vec<theseus::instance::InstanceFileItem>> {
-    Ok(theseus::instance::list_instance_files(instance_id, path).await?)
+) -> Result<Vec<refract_lib::instance::InstanceFileItem>> {
+    Ok(refract_lib::instance::list_instance_files(instance_id, path).await?)
 }
 
 #[tauri::command]
 pub async fn file_read(instance_id: &str, path: &str) -> Result<Vec<u8>> {
-    Ok(theseus::instance::read_instance_file(instance_id, path).await?)
+    Ok(refract_lib::instance::read_instance_file(instance_id, path).await?)
 }
 
 #[tauri::command]
@@ -152,7 +157,7 @@ pub async fn file_write(
     bytes: Vec<u8>,
     create_only: bool,
 ) -> Result<()> {
-    Ok(theseus::instance::write_instance_file(
+    Ok(refract_lib::instance::write_instance_file(
         instance_id,
         path,
         &bytes,
@@ -166,7 +171,10 @@ pub async fn file_create_directory(
     instance_id: &str,
     path: &str,
 ) -> Result<()> {
-    Ok(theseus::instance::create_instance_directory(instance_id, path).await?)
+    Ok(
+        refract_lib::instance::create_instance_directory(instance_id, path)
+            .await?,
+    )
 }
 
 #[tauri::command]
@@ -175,7 +183,7 @@ pub async fn file_rename(
     source: &str,
     destination: &str,
 ) -> Result<()> {
-    Ok(theseus::instance::rename_instance_file(
+    Ok(refract_lib::instance::rename_instance_file(
         instance_id,
         source,
         destination,
@@ -189,10 +197,12 @@ pub async fn file_delete(
     path: &str,
     recursive: bool,
 ) -> Result<()> {
-    Ok(
-        theseus::instance::delete_instance_file(instance_id, path, recursive)
-            .await?,
+    Ok(refract_lib::instance::delete_instance_file(
+        instance_id,
+        path,
+        recursive,
     )
+    .await?)
 }
 
 #[tauri::command]
@@ -218,11 +228,11 @@ pub async fn file_save_as<R: Runtime>(
 
     if let Some(dest) = rx.await.unwrap_or(None) {
         let dest_path = std::path::PathBuf::try_from(dest).map_err(|e| {
-            theseus::Error::from(theseus::ErrorKind::OtherError(format!(
-                "Invalid save path: {e}"
-            )))
+            refract_lib::Error::from(refract_lib::ErrorKind::OtherError(
+                format!("Invalid save path: {e}"),
+            ))
         })?;
-        theseus::instance::save_instance_file_as(
+        refract_lib::instance::save_instance_file_as(
             instance_id,
             file_path,
             &dest_path,

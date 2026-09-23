@@ -1,9 +1,9 @@
 [package]
-name = "theseus_gui"
+name = "refract"
 # The actual version is set by the theseus-build workflow on tagging
 version = "1.0.0-local"
 edition.workspace = true
-description = "The Modrinth App is a desktop application for managing your Minecraft mods"
+description = "Refract is a desktop application for managing your Minecraft mods"
 repository = "https://github.com/modrinth/code/apps/app/"
 license = "GPL-3.0-only"
 
@@ -33,7 +33,7 @@ tauri-plugin-os = { workspace = true }
 tauri-plugin-single-instance = { workspace = true }
 tauri-plugin-updater = { workspace = true }
 tauri-plugin-window-state = { workspace = true }
-theseus = { workspace = true, features = ["tauri"] }
+refract_lib = { workspace = true, features = ["tauri"] }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["time"] }
 tracing = { workspace = true }
@@ -78,7 +78,7 @@ default = ["custom-protocol"]
 # this feature is used for production builds where `devPath` points to the filesystem
 # DO NOT remove this
 custom-protocol = ["tauri/custom-protocol"]
-export-app-events = ["theseus/export-ts"]
+export-app-events = ["refract_lib/export-ts"]
 updater = []
 
 [lints]

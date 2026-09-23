@@ -1,4 +1,4 @@
-//! API for interacting with Theseus
+//! API for interacting with Refract
 pub mod cache;
 pub mod friends;
 pub mod handler;

@@ -323,7 +323,7 @@ useAppEvent('ads_consent_required', handleAdsConsentRequired, appEvents)
 
 const appVersion = getVersion()
 const tauriApiClient = new TauriModrinthClient({
-	userAgent: async () => `modrinth/theseus/${await appVersion} (support@modrinth.com)`,
+	userAgent: async () => `refract/${await appVersion}`,
 	labrinthBaseUrl: config.labrinthBaseUrl,
 	archonBaseUrl: config.archonBaseUrl,
 	sharedInstancesBaseUrl: config.sharedInstancesBaseUrl,
@@ -1835,16 +1835,16 @@ const updatePopupMessages = defineMessages({
 	},
 	meteredBody: {
 		id: 'app.update-popup.body.metered',
-		defaultMessage: `Modrinth App v{version} is available now! Since you're on a metered network, we didn't automatically download it.`,
+		defaultMessage: `Refract v{version} is available now! Since you're on a metered network, we didn't automatically download it.`,
 	},
 	downloadedBody: {
 		id: 'app.update-popup.body.download-complete',
-		defaultMessage: `Modrinth App v{version} has finished downloading. Reload to update now, or automatically when you close Modrinth App.`,
+		defaultMessage: `Refract v{version} has finished downloading. Reload to update now, or automatically when you close Refract.`,
 	},
 	linuxBody: {
 		id: 'app.update-popup.body.linux',
 		defaultMessage:
-			'Modrinth App v{version} is available. Use your package manager to update for the latest features and fixes!',
+			'Refract v{version} is available. Use your package manager to update for the latest features and fixes!',
 	},
 	reload: {
 		id: 'app.update-popup.reload',

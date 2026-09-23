@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
 use crate::api::Result;
-use theseus::pack::import::ImportLauncherType;
+use refract_lib::pack::import::ImportLauncherType;
 
-use theseus::pack::import;
+use refract_lib::pack::import;
 
 pub fn init<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
     tauri::plugin::Builder::new("import")
