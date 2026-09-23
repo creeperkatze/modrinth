@@ -8,7 +8,6 @@ import {
 	commonMessages,
 	defineMessages,
 	formatProjectTypeSentence,
-	injectNotificationManager,
 	Input,
 	LoadingIndicator,
 	NavTabs,
@@ -17,24 +16,24 @@ import {
 	ProjectCardList,
 	useVIntl,
 } from '@modrinth/ui'
-import { keepPreviousData, useQuery } from '@tanstack/vue-query'
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { refDebounced } from '@vueuse/core'
 import { type Mod, ModsSearchSortField, type SortOrder } from 'curseforge-js'
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
+import { useCurseForgeInstall } from '@/composables/curseforge/use-curseforge-install'
 import {
 	CURSEFORGE_CLASS_IDS,
+	curseForgeModQueryKey,
 	getCurseForgeClient,
 	getLoaderTypes,
 	hasCurseForgeApiKey,
-	installCurseForgeProject,
 	isCurseForgeContentType,
 	MINECRAFT_GAME_ID,
-	NoCompatibleFileError,
 } from '@/helpers/curseforge'
-import { get_content_items, list as listInstances } from '@/helpers/instance'
+import { list as listInstances } from '@/helpers/instance'
 import type { GameInstance } from '@/helpers/types'
 
 type ProjectTypeTab = {
@@ -57,7 +56,7 @@ const props = defineProps<{
 }>()
 
 const { formatMessage } = useVIntl()
-const { addNotification, handleError } = injectNotificationManager()
+const queryClient = useQueryClient()
 const route = useRoute()
 const router = useRouter()
 
@@ -139,32 +138,6 @@ const messages = defineMessages({
 	downloadOnCurseForgeTooltip: {
 		id: 'app.browse.curseforge.download-on-curseforge.tooltip',
 		defaultMessage: "This project's author doesn't allow downloads from other apps",
-	},
-	installed: {
-		id: 'app.browse.curseforge.install-success.title',
-		defaultMessage: 'Installed {name}',
-	},
-	installedWithDependencies: {
-		id: 'app.browse.curseforge.install-success.dependencies',
-		defaultMessage:
-			'Also installed {count, plural, one {# dependency} other {# dependencies}}: {names}',
-	},
-	restrictedTitle: {
-		id: 'app.browse.curseforge.restricted.title',
-		defaultMessage: 'Some files must be downloaded manually',
-	},
-	restrictedBody: {
-		id: 'app.browse.curseforge.restricted.body',
-		defaultMessage:
-			"The authors of {names} don't allow downloads from other apps. Download them from CurseForge and add them to the instance.",
-	},
-	noCompatibleFileTitle: {
-		id: 'app.browse.curseforge.no-compatible-file.title',
-		defaultMessage: 'No compatible file',
-	},
-	noCompatibleFileBody: {
-		id: 'app.browse.curseforge.no-compatible-file.body',
-		defaultMessage: '{name} has no files for Minecraft {gameVersion} with this loader.',
 	},
 })
 
@@ -311,97 +284,32 @@ function selectInstance(instanceId: string) {
 	void router.replace({ query: { ...route.query, i: instanceId } })
 }
 
-const installedQuery = useQuery(
-	computed(() => ({
-		queryKey: ['curseforge', 'installed', props.instance?.id],
-		queryFn: async () => {
-			const items = await get_content_items(props.instance!.id)
-			return new Set(
-				items
-					.filter((item) => item.external_source?.platform === 'curseforge')
-					.map((item) => item.external_source!.project_id),
-			)
-		},
-		enabled: !!props.instance,
-	})),
+const { installedFile, installing, install: installProject } = useCurseForgeInstall(
+	() => props.instance,
 )
-const newlyInstalled = ref(new Set<string>())
-const installing = ref(new Set<number>())
 
 function isInstalled(mod: Mod) {
-	const id = String(mod.id)
-	return newlyInstalled.value.has(id) || !!installedQuery.data.value?.has(id)
+	return !!installedFile(mod)
 }
 
-function setInstalling(modId: number, value: boolean) {
-	const next = new Set(installing.value)
-	if (value) {
-		next.add(modId)
-	} else {
-		next.delete(modId)
-	}
-	installing.value = next
+function install(mod: Mod) {
+	if (contentType.value) void installProject(mod, contentType.value)
 }
 
-async function install(mod: Mod) {
-	const instance = props.instance
-	const type = contentType.value
-	if (!instance || !type) return
+watch(
+	results,
+	(mods) => {
+		for (const mod of mods) {
+			queryClient.setQueryData(curseForgeModQueryKey(mod.id), mod)
+		}
+	},
+	{ immediate: true },
+)
 
-	setInstalling(mod.id, true)
-	try {
-		const result = await installCurseForgeProject(mod, type, {
-			instanceId: instance.id,
-			gameVersion: instance.game_version,
-			loader: instance.loader,
-			installedProjectIds: new Set([
-				...(installedQuery.data.value ?? []),
-				...newlyInstalled.value,
-			]),
-		})
-		newlyInstalled.value = new Set([
-			...newlyInstalled.value,
-			...result.installed.map((project) => String(project.id)),
-		])
-
-		const dependencies = result.installed.filter((project) => project.id !== mod.id)
-		if (result.installed.some((project) => project.id === mod.id)) {
-			addNotification({
-				title: formatMessage(messages.installed, { name: mod.name }),
-				text:
-					dependencies.length > 0
-						? formatMessage(messages.installedWithDependencies, {
-								count: dependencies.length,
-								names: dependencies.map((project) => project.name).join(', '),
-							})
-						: undefined,
-				type: 'success',
-			})
-		}
-		if (result.restricted.length > 0) {
-			addNotification({
-				title: formatMessage(messages.restrictedTitle),
-				text: formatMessage(messages.restrictedBody, {
-					names: result.restricted.map((project) => project.name).join(', '),
-				}),
-				type: 'warning',
-			})
-		}
-	} catch (error) {
-		if (error instanceof NoCompatibleFileError) {
-			addNotification({
-				title: formatMessage(messages.noCompatibleFileTitle),
-				text: formatMessage(messages.noCompatibleFileBody, {
-					name: error.mod.name,
-					gameVersion: instance.game_version,
-				}),
-				type: 'error',
-			})
-		} else {
-			handleError(error as Error)
-		}
-	} finally {
-		setInstalling(mod.id, false)
+function projectLink(mod: Mod) {
+	return {
+		path: `/curseforge/${mod.id}`,
+		query: { ...(route.query.i ? { i: route.query.i } : {}), b: route.fullPath },
 	}
 }
 
@@ -512,7 +420,7 @@ function openOnCurseForge(mod: Mod) {
 				<ProjectCard
 					v-for="mod in results"
 					:key="mod.id"
-					:link="mod.links?.websiteUrl || undefined"
+					:link="projectLink(mod)"
 					:title="mod.name"
 					:icon-url="mod.logo?.thumbnailUrl || mod.logo?.url || undefined"
 					:author="

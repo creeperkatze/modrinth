@@ -4,6 +4,7 @@ import { fetch as tauriFetch } from '@tauri-apps/plugin-http'
 import CurseForgeClient, {
 	type File as CurseForgeFile,
 	FileRelationType,
+	FileReleaseType,
 	HashAlgo,
 	type Mod,
 	ModLoaderType,
@@ -11,7 +12,7 @@ import CurseForgeClient, {
 
 import { config } from '@/config'
 
-import { install_external_file } from './instance'
+import { get_content_items, install_external_file, remove_project } from './instance'
 import type { ContentFileProjectType, InstanceLoader } from './types'
 
 /** Where the Browse page searches for content. */
@@ -43,8 +44,8 @@ const LOADER_TYPES: Partial<Record<InstanceLoader, ModLoaderType[]>> = {
 	quilt: [ModLoaderType.Quilt, ModLoaderType.Fabric],
 }
 
-/** Loader names as they appear in a CurseForge file's `gameVersions`. */
-const LOADER_TAGS: Partial<Record<ModLoaderType, string>> = {
+/** Loader names as they appear in a CurseForge file's `gameVersions`, matching Modrinth's loader tags. */
+export const LOADER_TAGS: Partial<Record<ModLoaderType, string>> = {
 	[ModLoaderType.Forge]: 'forge',
 	[ModLoaderType.NeoForge]: 'neoforge',
 	[ModLoaderType.Fabric]: 'fabric',
@@ -55,8 +56,17 @@ export function isCurseForgeContentType(type: string): type is CurseForgeContent
 	return type in CURSEFORGE_CLASS_IDS
 }
 
+export function contentTypeFromClassId(classId: number | null): CurseForgeContentType | null {
+	const entry = Object.entries(CURSEFORGE_CLASS_IDS).find(([, id]) => id === classId)
+	return entry ? (entry[0] as CurseForgeContentType) : null
+}
+
 export function hasCurseForgeApiKey(): boolean {
 	return !!config.curseforgeApiKey
+}
+
+export function curseForgeModQueryKey(modId: number) {
+	return ['curseforge', 'mod', modId] as const
 }
 
 let clientPromise: Promise<CurseForgeClient> | null = null
@@ -81,7 +91,7 @@ export function getLoaderTypes(
 	return contentType === 'mod' ? (LOADER_TYPES[loader] ?? []) : []
 }
 
-function matchesLoader(file: CurseForgeFile, loaderTypes: ModLoaderType[]): boolean {
+export function fileSupportsLoaders(file: CurseForgeFile, loaderTypes: ModLoaderType[]): boolean {
 	if (loaderTypes.length === 0) return true
 	const tags = new Set(file.gameVersions.map((version) => version.toLowerCase()))
 	return loaderTypes.some((type) => {
@@ -102,7 +112,7 @@ export function pickCompatibleFile(
 				file.isAvailable &&
 				!file.isServerPack &&
 				file.gameVersions.includes(gameVersion) &&
-				matchesLoader(file, loaderTypes),
+				fileSupportsLoaders(file, loaderTypes),
 		)
 		.sort((a, b) => {
 			if (a.releaseType !== b.releaseType) return a.releaseType - b.releaseType
@@ -119,6 +129,35 @@ export async function findCompatibleFile(
 	const client = await getCurseForgeClient()
 	const { data } = await client.files.list(modId, { gameVersion, pageSize: 50 })
 	return pickCompatibleFile(data, gameVersion, loaderTypes)
+}
+
+/** Loader tags a file lists in its `gameVersions`. */
+export function fileLoaders(file: CurseForgeFile): string[] {
+	const tags = new Set(Object.values(LOADER_TAGS))
+	return file.gameVersions
+		.map((version) => version.toLowerCase())
+		.filter((version) => tags.has(version))
+}
+
+/** Minecraft versions a file lists in its `gameVersions`. */
+export function fileGameVersions(file: CurseForgeFile): string[] {
+	return file.gameVersions.filter((version) => /^\d/.test(version))
+}
+
+export function releaseChannel(releaseType: FileReleaseType): 'release' | 'beta' | 'alpha' {
+	switch (releaseType) {
+		case FileReleaseType.Beta:
+			return 'beta'
+		case FileReleaseType.Alpha:
+			return 'alpha'
+		default:
+			return 'release'
+	}
+}
+
+/** Sorts Minecraft version strings newest first. */
+export function compareGameVersionsDesc(a: string, b: string): number {
+	return b.localeCompare(a, undefined, { numeric: true })
 }
 
 export function getSha1(file: CurseForgeFile): string | null {
@@ -142,6 +181,27 @@ export function toExternalSource(mod: Mod, file: CurseForgeFile): ExternalConten
 	}
 }
 
+export type InstalledCurseForgeFile = {
+	fileId: string
+	/** Path of the installed file relative to the instance directory. */
+	path: string
+}
+
+/** CurseForge projects installed in an instance, keyed by CurseForge project id. */
+export async function getInstalledCurseForgeFiles(
+	instanceId: string,
+): Promise<Map<string, InstalledCurseForgeFile>> {
+	const items = await get_content_items(instanceId)
+	const installed = new Map<string, InstalledCurseForgeFile>()
+	for (const item of items) {
+		const source = item.external_source
+		if (source?.platform === 'curseforge' && item.file_path) {
+			installed.set(source.project_id, { fileId: source.file_id, path: item.file_path })
+		}
+	}
+	return installed
+}
+
 export type CurseForgeInstallTarget = {
 	instanceId: string
 	gameVersion: string
@@ -162,11 +222,19 @@ export class NoCompatibleFileError extends Error {
 	}
 }
 
+export type CurseForgeInstallOptions = {
+	/** A specific file of the project to install instead of the newest compatible one. */
+	file?: CurseForgeFile
+	/** An installed file of the same project to remove once the new file is installed. */
+	replacePath?: string
+}
+
 /** Installs a CurseForge project into an instance along with its required dependencies. */
 export async function installCurseForgeProject(
 	mod: Mod,
 	contentType: CurseForgeContentType,
 	target: CurseForgeInstallTarget,
+	options: CurseForgeInstallOptions = {},
 ): Promise<CurseForgeInstallResult> {
 	const client = await getCurseForgeClient()
 	const loaderTypes = getLoaderTypes(contentType, target.loader)
@@ -174,10 +242,13 @@ export async function installCurseForgeProject(
 	const visited = new Set(target.installedProjectIds)
 
 	async function install(project: Mod, isDependency: boolean) {
-		if (visited.has(String(project.id))) return
+		if (isDependency && visited.has(String(project.id))) return
 		visited.add(String(project.id))
 
-		const file = await findCompatibleFile(project.id, target.gameVersion, loaderTypes)
+		const file =
+			!isDependency && options.file
+				? options.file
+				: await findCompatibleFile(project.id, target.gameVersion, loaderTypes)
 		if (!file) {
 			if (isDependency) return
 			throw new NoCompatibleFileError(project)
@@ -200,16 +271,21 @@ export async function installCurseForgeProject(
 			return
 		}
 
-		await install_external_file(target.instanceId, {
+		const path = await install_external_file(target.instanceId, {
 			url: file.downloadUrl,
 			file_name: file.fileName,
 			sha1,
 			project_type: INSTALL_PROJECT_TYPES[contentType],
 			source: toExternalSource(project, file),
 		})
+		if (!isDependency) root.path = path
 		result.installed.push(project)
 	}
 
+	const root: { path: string | null } = { path: null }
 	await install(mod, false)
+	if (options.replacePath && root.path && root.path !== options.replacePath) {
+		await remove_project(target.instanceId, options.replacePath)
+	}
 	return result
 }

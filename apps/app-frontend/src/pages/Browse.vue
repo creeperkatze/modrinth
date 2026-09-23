@@ -3,6 +3,7 @@ import type { Labrinth } from '@modrinth/api-client'
 import {
 	CheckIcon,
 	CompassIcon,
+	CurseForgeIcon,
 	ExternalIcon,
 	GlobeIcon,
 	PlusIcon,
@@ -60,7 +61,11 @@ import {
 	instanceKeys,
 	instanceLinkedProjectQueryOptions,
 } from '@/pages/instance/query-options'
-import { type BreadcrumbDefinition, injectBreadcrumbManager } from '@/providers/breadcrumbs'
+import {
+	type BreadcrumbDefinition,
+	type BreadcrumbHandle,
+	injectBreadcrumbManager,
+} from '@/providers/breadcrumbs'
 import { injectContentInstall } from '@/providers/content-install'
 import { injectServerInstall } from '@/providers/server-install'
 import {
@@ -96,6 +101,10 @@ const breadcrumbMessages = defineMessages({
 	discoverServers: {
 		id: 'app.browse.discover-servers',
 		defaultMessage: 'Discover servers',
+	},
+	curseForge: {
+		id: 'app.curseforge.project.breadcrumb',
+		defaultMessage: 'CurseForge',
 	},
 })
 const breadcrumbLabel = computed(() => {
@@ -246,10 +255,28 @@ const breadcrumbDefinition = {
 	visual: { type: 'icon', component: CompassIcon },
 } satisfies BreadcrumbDefinition
 
+const curseForgeBreadcrumbDefinition = {
+	slot: 'source',
+	id: 'source:curseforge',
+	label: () => formatMessage(breadcrumbMessages.curseForge),
+	to: () => displayedBrowseRoute.value.fullPath,
+	visual: { type: 'icon', component: CurseForgeIcon },
+} satisfies BreadcrumbDefinition
+
+function pushSourceBreadcrumb(parent: BreadcrumbHandle) {
+	const query = displayedBrowseRoute.value.query
+	if (query.src === 'curseforge' && query.from !== 'worlds') {
+		breadcrumbManager.push(curseForgeBreadcrumbDefinition, { parent })
+	}
+}
+
 function syncBreadcrumbs() {
 	if (displayedBrowseRoute.value.query.i) {
 		const instanceBreadcrumb = breadcrumbManager.reset(instanceBreadcrumbDefinition)
-		breadcrumbManager.push(breadcrumbDefinition, { parent: instanceBreadcrumb })
+		const browseBreadcrumb = breadcrumbManager.push(breadcrumbDefinition, {
+			parent: instanceBreadcrumb,
+		})
+		pushSourceBreadcrumb(browseBreadcrumb)
 		return
 	}
 
@@ -262,7 +289,7 @@ function syncBreadcrumbs() {
 		return
 	}
 
-	breadcrumbManager.reset(breadcrumbDefinition)
+	pushSourceBreadcrumb(breadcrumbManager.reset(breadcrumbDefinition))
 }
 
 watch(displayedBrowseRoute, syncBreadcrumbs, { immediate: true, flush: 'sync' })

@@ -104,6 +104,28 @@ export default new createRouter({
 			],
 		},
 		{
+			path: '/curseforge/:id',
+			name: 'CurseForgeProject',
+			component: () => import('@/pages/curseforge/Project.vue'),
+			children: [
+				{
+					path: '',
+					name: 'CurseForgeDescription',
+					component: () => import('@/pages/curseforge/Description.vue'),
+				},
+				{
+					path: 'files',
+					name: 'CurseForgeFiles',
+					component: () => import('@/pages/curseforge/Files.vue'),
+				},
+				{
+					path: 'gallery',
+					name: 'CurseForgeGallery',
+					component: () => import('@/pages/curseforge/Gallery.vue'),
+				},
+			],
+		},
+		{
 			path: '/instance/:id',
 			name: 'Instance',
 			component: () => import('@/pages/instance/layout.vue'),

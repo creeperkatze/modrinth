@@ -1724,7 +1724,12 @@ provideContentManager({
 			},
 		projectLink: item.project?.id
 			? { path: `/project/${item.project.id}`, query: { i: instancePage.instanceId.value } }
-			: (item.external_source?.project_url ?? undefined),
+			: item.external_source?.platform === 'curseforge'
+				? {
+						path: `/curseforge/${item.external_source.project_id}`,
+						query: { i: instancePage.instanceId.value },
+					}
+				: undefined,
 		version: item.version ?? {
 			id: item.external_source?.file_id ?? item.file_name,
 			version_number: item.external_source?.file_display_name ?? contentVersionLabel(item),

@@ -242,32 +242,14 @@
   "app.browse.curseforge.download-on-curseforge.tooltip": {
     "message": "This project's author doesn't allow downloads from other apps"
   },
-  "app.browse.curseforge.install-success.dependencies": {
-    "message": "Also installed {count, plural, one {# dependency} other {# dependencies}}: {names}"
-  },
-  "app.browse.curseforge.install-success.title": {
-    "message": "Installed {name}"
-  },
   "app.browse.curseforge.missing-api-key.body": {
     "message": "Set CURSEFORGE_API_KEY in packages/app-lib/.env and restart the app to browse CurseForge."
   },
   "app.browse.curseforge.missing-api-key.title": {
     "message": "CurseForge API key missing"
   },
-  "app.browse.curseforge.no-compatible-file.body": {
-    "message": "{name} has no files for Minecraft {gameVersion} with this loader."
-  },
-  "app.browse.curseforge.no-compatible-file.title": {
-    "message": "No compatible file"
-  },
   "app.browse.curseforge.no-results": {
     "message": "No results found for your query!"
-  },
-  "app.browse.curseforge.restricted.body": {
-    "message": "The authors of {names} don't allow downloads from other apps. Download them from CurseForge and add them to the instance."
-  },
-  "app.browse.curseforge.restricted.title": {
-    "message": "Some files must be downloaded manually"
   },
   "app.browse.curseforge.search-failed": {
     "message": "Could not load results from CurseForge."
@@ -361,6 +343,129 @@
   },
   "app.content.sync-resource-packs-disabled": {
     "message": "Turn on resource pack syncing in app settings first."
+  },
+  "app.curseforge.files.download-on-curseforge": {
+    "message": "Download on CurseForge"
+  },
+  "app.curseforge.files.downloads": {
+    "message": "{count, plural, one {# download} other {# downloads}}"
+  },
+  "app.curseforge.files.load-error": {
+    "message": "Could not load files from CurseForge."
+  },
+  "app.curseforge.files.more-versions": {
+    "message": "+{count}"
+  },
+  "app.curseforge.files.none": {
+    "message": "No files found."
+  },
+  "app.curseforge.files.only-compatible": {
+    "message": "Only show files for {instance}"
+  },
+  "app.curseforge.files.switch": {
+    "message": "Switch"
+  },
+  "app.curseforge.install-success.dependencies": {
+    "message": "Also installed {count, plural, one {# dependency} other {# dependencies}}: {names}"
+  },
+  "app.curseforge.install-success.title": {
+    "message": "Installed {name}"
+  },
+  "app.curseforge.no-compatible-file.body": {
+    "message": "{name} has no files for Minecraft {gameVersion} with this loader."
+  },
+  "app.curseforge.no-compatible-file.title": {
+    "message": "No compatible file"
+  },
+  "app.curseforge.project.back-to-browse": {
+    "message": "Back to discover"
+  },
+  "app.curseforge.project.back-to-instance": {
+    "message": "Back to instance"
+  },
+  "app.curseforge.project.breadcrumb": {
+    "message": "CurseForge"
+  },
+  "app.curseforge.project.compatibility": {
+    "message": "Compatibility"
+  },
+  "app.curseforge.project.creators": {
+    "message": "Creators"
+  },
+  "app.curseforge.project.details.created": {
+    "message": "Created {date}"
+  },
+  "app.curseforge.project.details.id": {
+    "message": "Project ID {id}"
+  },
+  "app.curseforge.project.details.updated": {
+    "message": "Updated {date}"
+  },
+  "app.curseforge.project.download-on-curseforge": {
+    "message": "Download on CurseForge"
+  },
+  "app.curseforge.project.download-on-curseforge.tooltip": {
+    "message": "This project's author doesn't allow downloads from other apps"
+  },
+  "app.curseforge.project.downloads": {
+    "message": "{count, plural, one {download} other {downloads}}"
+  },
+  "app.curseforge.project.install-to": {
+    "message": "Install to instance..."
+  },
+  "app.curseforge.project.links": {
+    "message": "Links"
+  },
+  "app.curseforge.project.links.issues": {
+    "message": "Issues"
+  },
+  "app.curseforge.project.links.page": {
+    "message": "CurseForge page"
+  },
+  "app.curseforge.project.links.source": {
+    "message": "Source"
+  },
+  "app.curseforge.project.links.wiki": {
+    "message": "Wiki"
+  },
+  "app.curseforge.project.load-error": {
+    "message": "This CurseForge project could not be loaded."
+  },
+  "app.curseforge.project.minecraft-versions": {
+    "message": "Minecraft: Java Edition"
+  },
+  "app.curseforge.project.missing-api-key": {
+    "message": "Set CURSEFORGE_API_KEY in packages/app-lib/.env and restart the app to view CurseForge projects."
+  },
+  "app.curseforge.project.more-options": {
+    "message": "More options"
+  },
+  "app.curseforge.project.open-on-curseforge": {
+    "message": "Open on CurseForge"
+  },
+  "app.curseforge.project.platforms": {
+    "message": "Platforms"
+  },
+  "app.curseforge.project.switch-version": {
+    "message": "Switch version"
+  },
+  "app.curseforge.project.tab.description": {
+    "message": "Description"
+  },
+  "app.curseforge.project.tab.files": {
+    "message": "Files"
+  },
+  "app.curseforge.project.tab.gallery": {
+    "message": "Gallery"
+  },
+  "app.curseforge.project.updated": {
+    "message": "Updated"
+  },
+  "app.curseforge.restricted.body": {
+    "message": "The authors of {names} don't allow downloads from other apps. Download them from CurseForge and add them to the instance."
+  },
+  "app.curseforge.restricted.title": {
+    "message": "Some files must be downloaded manually"
   },
   "app.download-manager.active": {
     "message": "Active"
