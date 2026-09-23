@@ -50,6 +50,23 @@ export interface EmbeddedContentMetadata {
 	icon_url?: string | null
 }
 
+export type ExternalPlatform = 'curseforge'
+
+/** Where a content file came from on a platform other than Modrinth. */
+export interface ExternalContentSource {
+	platform: ExternalPlatform
+	project_id: string
+	file_id: string
+	project_slug?: string | null
+	project_title: string
+	project_icon_url?: string | null
+	project_url?: string | null
+	author_name?: string | null
+	author_url?: string | null
+	file_display_name?: string | null
+	file_date?: string | null
+}
+
 export interface ContentCardTableItem {
 	id: string
 	project: ContentCardProject
@@ -115,6 +132,7 @@ export interface ContentItem extends Omit<
 	external?: boolean
 	external_url?: string
 	embedded_metadata?: EmbeddedContentMetadata | null
+	external_source?: ExternalContentSource | null
 }
 
 export type ManagedContentProject = Pick<

@@ -636,6 +636,7 @@ pub async fn upload_synced_pack(
                 date_added: Some(chrono::Utc::now().to_rfc3339()),
                 source_kind: Some(ContentSourceKind::Local),
                 embedded_metadata: None,
+                external_source: None,
                 synced_pack: None,
             },
         },

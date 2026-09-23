@@ -12,6 +12,9 @@ pub use self::content_set_remote_ref::*;
 mod content_set_sync_state;
 pub use self::content_set_sync_state::*;
 
+mod external_source;
+pub use self::external_source::*;
+
 mod file;
 pub use self::file::*;
 

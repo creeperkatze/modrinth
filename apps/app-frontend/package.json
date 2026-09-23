@@ -33,6 +33,7 @@
 		"@types/three": "^0.172.0",
 		"@vueuse/core": "^11.1.0",
 		"ace-builds": "^1.43.5",
+		"curseforge-js": "^1.1.5",
 		"dayjs": "^1.11.10",
 		"@floating-ui/vue": "^2.0.1",
 		"fuse.js": "^6.6.2",

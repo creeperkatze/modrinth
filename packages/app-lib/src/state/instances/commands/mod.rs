@@ -46,6 +46,9 @@ pub(crate) use self::launch_context::*;
 mod apply_content_install;
 pub(crate) use self::apply_content_install::*;
 
+mod install_external_content;
+pub(crate) use self::install_external_content::install_external_file;
+
 mod content_mutation;
 pub(crate) use self::content_mutation::{
     ContentOrigin, InstallContent, install_stored_file, remove_project,

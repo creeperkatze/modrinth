@@ -19,4 +19,5 @@ export const config = {
 	labrinthBaseUrl,
 	archonBaseUrl,
 	sharedInstancesBaseUrl,
+	curseforgeApiKey: import.meta.env.CURSEFORGE_API_KEY || '',
 }

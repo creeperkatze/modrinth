@@ -575,6 +575,7 @@ pub(crate) async fn dependencies_to_content_items(
 
             Some(ContentItem {
                 synced_pack: None,
+                external_source: None,
                 file_name: version
                     .and_then(|version| version.files.first())
                     .map(|file| file.filename.clone())
@@ -991,6 +992,15 @@ async fn content_files_to_content_items(
             instance, loader, files, state,
         )
         .await?;
+    let hashes = files
+        .iter()
+        .map(|(_, file)| file.hash.as_str())
+        .collect::<Vec<_>>();
+    let external_sources = sqlite::external_source_rows::get_external_sources(
+        &hashes,
+        &state.pool,
+    )
+    .await?;
     let instance_path = state.directories.instances_dir().join(&instance.path);
     let paths = files
         .iter()
@@ -1058,6 +1068,7 @@ async fn content_files_to_content_items(
                 date_added: modification_times[index].clone(),
                 source_kind: file.source_kind,
                 embedded_metadata: embedded_metadata.get(&file.hash).cloned(),
+                external_source: external_sources.get(&file.hash).cloned(),
             }
         })
         .collect::<Vec<_>>();

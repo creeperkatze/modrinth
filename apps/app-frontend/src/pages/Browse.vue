@@ -11,6 +11,7 @@ import {
 } from '@modrinth/assets'
 import type { BrowseInstallContentType, CardAction, ProjectType, Tags } from '@modrinth/ui'
 import {
+	BrowseInstallHeader,
 	BrowsePageLayout,
 	BrowseSidebar,
 	commonMessages,
@@ -38,10 +39,13 @@ import { computed, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
 import type { LocationQuery } from 'vue-router'
 import { useRoute, useRouter } from 'vue-router'
 
+import ContentSourceSwitch from '@/components/ui/browse/ContentSourceSwitch.vue'
+import CurseForgeBrowse from '@/components/ui/browse/CurseForgeBrowse.vue'
 import { useAppServerBrowse } from '@/composables/browse/use-app-server-browse'
 import { useAppEvent } from '@/composables/use-app-event'
 import { useAppSettings } from '@/composables/use-app-settings.ts'
 import { get_project, get_search_results_v3, get_version_many } from '@/helpers/cache.js'
+import type { ContentSource } from '@/helpers/curseforge'
 import {
 	get_installed_project_ids as getInstalledProjectIds,
 	getInstanceIconUrl,
@@ -110,6 +114,15 @@ const breadcrumbLabel = computed(() => {
 })
 const appSettings = useAppSettings()
 const browseRouteActive = computed(() => route.path.startsWith('/browse/'))
+
+const contentSource = computed<ContentSource>({
+	get: () => (displayedBrowseRoute.value.query.src === 'curseforge' ? 'curseforge' : 'modrinth'),
+	set: (source) => {
+		void router.replace({
+			query: { ...route.query, src: source === 'curseforge' ? source : undefined },
+		})
+	},
+})
 const serverSetupModalRef = ref<InstanceType<typeof CreationFlowModal> | null>(null)
 const serverInstallContent = createServerInstallContent({ serverSetupModalRef })
 provideServerInstallContent(serverInstallContent)
@@ -149,6 +162,12 @@ const {
 	handleServerModpackFlowCreate,
 	markServerProjectInstalled,
 } = serverInstallContent
+
+const showContentSourceSwitch = computed(() => !isServerContext.value && !isFromWorlds.value)
+const curseforgeActive = computed(
+	() => showContentSourceSwitch.value && contentSource.value === 'curseforge',
+)
+const modrinthSearchActive = computed(() => browseRouteActive.value && !curseforgeActive.value)
 
 const initialInstanceId = computed(() => String(route.query.i ?? ''))
 const instanceQuery = useQuery(
@@ -695,6 +714,7 @@ const selectableProjectTypes = computed(() => {
 	if (route.query.ai) params.ai = route.query.ai
 	if (route.query.from) params.from = route.query.from
 	if (route.query.sid) params.sid = route.query.sid
+	if (route.query.src) params.src = route.query.src
 	if (effectiveServerWorldId.value) params.wid = effectiveServerWorldId.value
 
 	const queryString = new URLSearchParams(params as Record<string, string>).toString()
@@ -1151,10 +1171,10 @@ const lockedFilterMessages = computed(() => ({
 const searchState = useBrowseSearch({
 	projectType,
 	tags,
-	active: browseRouteActive,
+	active: modrinthSearchActive,
 	providedFilters: combinedProvidedFilters,
 	search,
-	persistentQueryParams: ['i', 'ai', 'shi', 'sid', 'wid', 'from'],
+	persistentQueryParams: ['i', 'ai', 'shi', 'sid', 'wid', 'from', 'src'],
 	getExtraQueryParams: () => ({
 		sid: serverIdQuery.value || undefined,
 		wid: effectiveServerWorldId.value || undefined,
@@ -1331,7 +1351,20 @@ provideBrowseManager({
 
 <template>
 	<div class="flex flex-col gap-2 p-6">
-		<BrowsePageLayout>
+		<template v-if="curseforgeActive">
+			<div
+				v-if="installContext"
+				class="sticky top-0 z-20 -mx-6 -mt-6 mb-4 rounded-tl-[--radius-xl] border-0 border-b border-solid bg-surface-1 px-6 py-4 border-surface-5"
+			>
+				<BrowseInstallHeader />
+			</div>
+			<CurseForgeBrowse
+				:project-type="projectType"
+				:instance="instance"
+				:project-type-tabs="selectableProjectTypes"
+			/>
+		</template>
+		<BrowsePageLayout v-else>
 			<template #after>
 				<ContextMenu ref="contextMenuRef" :label="formatMessage(messages.projectActionsLabel)">
 					<template #open_link="{ option }">
@@ -1355,7 +1388,12 @@ provideBrowseManager({
 			@create="handleServerModpackFlowCreate"
 		/>
 		<Teleport v-if="browseRouteActive" to="#sidebar-teleport-target">
-			<BrowseSidebar />
+			<ContentSourceSwitch v-if="curseforgeActive" v-model="contentSource" />
+			<BrowseSidebar v-else>
+				<template v-if="showContentSourceSwitch" #prepend>
+					<ContentSourceSwitch v-model="contentSource" />
+				</template>
+			</BrowseSidebar>
 		</Teleport>
 	</div>
 </template>

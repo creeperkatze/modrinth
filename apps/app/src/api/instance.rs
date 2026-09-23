@@ -10,10 +10,10 @@ use tauri_plugin_opener::OpenerExt;
 use theseus::DownloadReason;
 use theseus::data::{
     AppliedContentSetPatch, ContentItem, Dependency,
-    EditInstance as CoreEditInstance, InstanceInstallCandidate,
-    InstanceInstallTarget, InstanceLaunchOverridesPatch,
-    InstanceLink as CoreInstanceLink, InstanceMetadata, InstanceTabVisibility,
-    LinkedModpackInfo,
+    EditInstance as CoreEditInstance, InstallExternalFileRequest,
+    InstanceInstallCandidate, InstanceInstallTarget,
+    InstanceLaunchOverridesPatch, InstanceLink as CoreInstanceLink,
+    InstanceMetadata, InstanceTabVisibility, LinkedModpackInfo,
     SharedInstanceAttachment as CoreSharedInstanceAttachment,
     SharedInstanceRole,
 };
@@ -97,6 +97,7 @@ pub fn init<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
             instance_install_project_with_dependencies,
             instance_switch_project_version_with_dependencies,
             instance_add_project_from_path,
+            instance_install_external_file,
             instance_is_file_on_modrinth,
             instance_toggle_disable_project,
             instance_set_project_locked,
@@ -1232,6 +1233,14 @@ pub async fn instance_add_project_from_path(
         project_type,
     )
     .await?)
+}
+
+#[tauri::command]
+pub async fn instance_install_external_file(
+    instance_id: &str,
+    request: InstallExternalFileRequest,
+) -> Result<String> {
+    Ok(theseus::instance::install_external_file(instance_id, request).await?)
 }
 
 #[tauri::command]

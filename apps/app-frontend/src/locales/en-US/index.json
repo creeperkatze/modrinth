@@ -245,6 +245,81 @@
   "app.browse.back-to-instance": {
     "message": "Back to instance"
   },
+  "app.browse.content-source": {
+    "message": "Source"
+  },
+  "app.browse.curseforge.all-categories": {
+    "message": "All categories"
+  },
+  "app.browse.curseforge.download-on-curseforge": {
+    "message": "Download on CurseForge"
+  },
+  "app.browse.curseforge.download-on-curseforge.tooltip": {
+    "message": "This project's author doesn't allow downloads from other apps"
+  },
+  "app.browse.curseforge.install-success.dependencies": {
+    "message": "Also installed {count, plural, one {# dependency} other {# dependencies}}: {names}"
+  },
+  "app.browse.curseforge.install-success.title": {
+    "message": "Installed {name}"
+  },
+  "app.browse.curseforge.missing-api-key.body": {
+    "message": "Set CURSEFORGE_API_KEY in packages/app-lib/.env and restart the app to browse CurseForge."
+  },
+  "app.browse.curseforge.missing-api-key.title": {
+    "message": "CurseForge API key missing"
+  },
+  "app.browse.curseforge.no-compatible-file.body": {
+    "message": "{name} has no files for Minecraft {gameVersion} with this loader."
+  },
+  "app.browse.curseforge.no-compatible-file.title": {
+    "message": "No compatible file"
+  },
+  "app.browse.curseforge.no-results": {
+    "message": "No results found for your query!"
+  },
+  "app.browse.curseforge.restricted.body": {
+    "message": "The authors of {names} don't allow downloads from other apps. Download them from CurseForge and add them to the instance."
+  },
+  "app.browse.curseforge.restricted.title": {
+    "message": "Some files must be downloaded manually"
+  },
+  "app.browse.curseforge.search-failed": {
+    "message": "Could not load results from CurseForge."
+  },
+  "app.browse.curseforge.search-placeholder": {
+    "message": "Search {projectType} on CurseForge..."
+  },
+  "app.browse.curseforge.select-instance.body": {
+    "message": "CurseForge content is installed into a specific instance. Pick one to filter results by its Minecraft version and loader."
+  },
+  "app.browse.curseforge.select-instance.placeholder": {
+    "message": "Select instance"
+  },
+  "app.browse.curseforge.select-instance.title": {
+    "message": "Select an instance to install to"
+  },
+  "app.browse.curseforge.sort.downloads": {
+    "message": "Downloads"
+  },
+  "app.browse.curseforge.sort.name": {
+    "message": "Name"
+  },
+  "app.browse.curseforge.sort.newest": {
+    "message": "Newest"
+  },
+  "app.browse.curseforge.sort.popularity": {
+    "message": "Popularity"
+  },
+  "app.browse.curseforge.sort.updated": {
+    "message": "Recently updated"
+  },
+  "app.browse.curseforge.unsupported-type.body": {
+    "message": "Switch to Modrinth or pick another content type."
+  },
+  "app.browse.curseforge.unsupported-type.title": {
+    "message": "CurseForge {projectType} aren't supported yet"
+  },
   "app.browse.discover-project-type": {
     "message": "Discover {projectType}"
   },

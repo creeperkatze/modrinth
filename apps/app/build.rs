@@ -277,6 +277,7 @@ fn main() {
                         "instance_install_project_with_dependencies",
                         "instance_switch_project_version_with_dependencies",
                         "instance_add_project_from_path",
+                        "instance_install_external_file",
                         "instance_is_file_on_modrinth",
                         "instance_toggle_disable_project",
                         "instance_set_project_locked",

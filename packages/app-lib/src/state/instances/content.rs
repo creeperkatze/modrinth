@@ -1,4 +1,4 @@
-use super::ContentSourceKind;
+use super::{ContentSourceKind, ExternalContentSource};
 use crate::state::{
     License, Project, ProjectType, Version, VersionEnvironment,
 };
@@ -22,6 +22,8 @@ pub struct ContentItem {
     pub date_added: Option<String>,
     pub source_kind: Option<ContentSourceKind>,
     pub embedded_metadata: Option<EmbeddedContentMetadata>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub external_source: Option<ExternalContentSource>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub synced_pack: Option<SyncedPackInfo>,
 }

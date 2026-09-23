@@ -2,7 +2,8 @@ use crate::event::emit::{emit_instance, emit_loading, init_loading};
 use crate::event::{InstancePayloadType, LoadingBarType};
 use crate::state::instances::adapters::sqlite::instance_rows;
 use crate::state::{
-    CacheBehaviour, CachedEntry, ContentSourceKind, ProjectType, State,
+    CacheBehaviour, CachedEntry, ContentSourceKind, InstallExternalFileRequest,
+    ProjectType, State,
 };
 use crate::util::fetch;
 use modrinth_content_management::{
@@ -251,6 +252,26 @@ pub async fn add_project_from_path(
             instance_id,
             path,
             project_type,
+            &state,
+        )
+        .await?;
+    super::synced_packs::sync_new_pack(instance_id, &project_path).await;
+    emit_instance(instance_id, InstancePayloadType::Edited).await?;
+
+    Ok(project_path)
+}
+
+#[tracing::instrument]
+pub async fn install_external_file(
+    instance_id: &str,
+    request: InstallExternalFileRequest,
+) -> crate::Result<String> {
+    let state = State::get().await?;
+    ensure_instance_content_unlocked(instance_id, &state).await?;
+    let project_path =
+        crate::state::instances::commands::install_external_file(
+            instance_id,
+            &request,
             &state,
         )
         .await?;

@@ -1632,6 +1632,28 @@ function contentVersionLabel(item: ContentItem): string {
 	return formatMessage(commonMessages.unknownLabel)
 }
 
+function externalContentProject(item: ContentItem) {
+	const source = item.external_source
+	if (!source) return undefined
+	return {
+		id: `${source.platform}:${source.project_id}`,
+		slug: source.project_slug ?? null,
+		title: source.project_title,
+		icon_url: source.project_icon_url ?? item.embedded_metadata?.icon_url ?? null,
+	}
+}
+
+function externalContentOwner(item: ContentItem): ContentOwner | undefined {
+	const source = item.external_source
+	if (!source?.author_name) return undefined
+	return {
+		id: `${source.platform}:${source.author_name}`,
+		name: source.author_name,
+		type: 'user',
+		link: source.author_url ?? undefined,
+	}
+}
+
 provideContentManager({
 	items: mergedProjects,
 	loading,
@@ -1693,18 +1715,19 @@ provideContentManager({
 	getItemId: getContentItemId,
 	mapToTableItem: (item: ContentItem) => ({
 		id: getContentItemId(item),
-		project: item.project ?? {
-			id: item.file_name,
-			slug: null,
-			title: item.embedded_metadata?.name ?? item.file_name.replace('.disabled', ''),
-			icon_url: item.embedded_metadata?.icon_url ?? null,
-		},
+		project: item.project ??
+			externalContentProject(item) ?? {
+				id: item.file_name,
+				slug: null,
+				title: item.embedded_metadata?.name ?? item.file_name.replace('.disabled', ''),
+				icon_url: item.embedded_metadata?.icon_url ?? null,
+			},
 		projectLink: item.project?.id
 			? { path: `/project/${item.project.id}`, query: { i: instancePage.instanceId.value } }
-			: undefined,
+			: (item.external_source?.project_url ?? undefined),
 		version: item.version ?? {
-			id: item.file_name,
-			version_number: contentVersionLabel(item),
+			id: item.external_source?.file_id ?? item.file_name,
+			version_number: item.external_source?.file_display_name ?? contentVersionLabel(item),
 			file_name: item.file_name,
 		},
 		versionLink:
@@ -1719,8 +1742,8 @@ provideContentManager({
 					...item.owner,
 					link: contentOwnerLink(item.owner),
 				}
-			: undefined,
-		external: item.external ?? !item.project,
+			: externalContentOwner(item),
+		external: item.external ?? (!item.project && !item.external_source),
 		enabled: canMutateContent(item) ? item.enabled : undefined,
 		synced: !!item.synced_pack,
 		syncUpdatePending: item.synced_pack?.update_pending,
