@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
 	CoffeeIcon,
+	CompassIcon,
 	HeartHandshakeIcon,
 	LanguagesIcon,
 	LightBulbIcon,
@@ -39,6 +40,7 @@ import FeaturesSettings from '@/components/ui/settings/display/FeaturesSettings.
 import LanguageSettings from '@/components/ui/settings/display/LanguageSettings.vue'
 import InstancesSyncedSettings from '@/components/ui/settings/instances/instances-synced-settings/index.vue'
 import JavaSettings from '@/components/ui/settings/instances/JavaSettings.vue'
+import PlatformSettings from '@/components/ui/settings/instances/PlatformSettings.vue'
 import ResourceManagementSettings from '@/components/ui/settings/instances/ResourceManagementSettings.vue'
 import { useAppSettings } from '@/composables/use-app-settings.ts'
 import { appSettingsKeys, appSettingsQueryOptions, set } from '@/helpers/settings.ts'
@@ -160,6 +162,15 @@ const tabs = [
 		category: tabCategories.instances,
 		icon: CoffeeIcon,
 		content: JavaSettings,
+	},
+	{
+		name: defineMessage({
+			id: 'app.settings.tabs.platforms',
+			defaultMessage: 'Platforms',
+		}),
+		category: tabCategories.instances,
+		icon: CompassIcon,
+		content: PlatformSettings,
 	},
 	{
 		name: defineMessage({

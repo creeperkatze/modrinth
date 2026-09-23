@@ -11,7 +11,6 @@ import {
 	TagTagItem,
 	Toggle,
 	useFormatDateTime,
-	useFormatNumber,
 	useVIntl,
 	VersionChannelIndicator,
 } from '@modrinth/ui'
@@ -42,7 +41,6 @@ const props = defineProps<{
 }>()
 
 const { formatMessage } = useVIntl()
-const formatNumber = useFormatNumber()
 const formatDate = useFormatDateTime({ year: 'numeric', month: 'short', day: 'numeric' })
 
 const PAGE_SIZE = 50
@@ -175,7 +173,7 @@ function openFileOnCurseForge(file: CurseForgeFile) {
 				<div class="flex w-40 flex-col text-sm text-secondary">
 					<span>{{ formatDate(new Date(file.fileDate)) }}</span>
 					<span>
-						{{ formatMessage(messages.downloads, { count: formatNumber(file.downloadCount) }) }}
+						{{ formatMessage(messages.downloads, { count: file.downloadCount }) }}
 					</span>
 				</div>
 				<div class="flex w-48 justify-end">

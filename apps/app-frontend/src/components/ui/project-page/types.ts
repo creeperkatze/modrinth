@@ -1,4 +1,5 @@
 import type { Component } from 'vue'
+import type { RouteLocationRaw } from 'vue-router'
 
 export type ProjectPageTab = {
 	label: string
@@ -17,7 +18,8 @@ export type ProjectLink = {
 export type ProjectCreator = {
 	id: string
 	name: string
-	url?: string | null
+	/** The creator's profile page in the app. */
+	link?: RouteLocationRaw | null
 	avatarUrl?: string | null
 }
 

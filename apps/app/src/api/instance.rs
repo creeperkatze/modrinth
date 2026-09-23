@@ -39,6 +39,8 @@ pub fn init<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
             instance_get_installed_project_ids,
             instance_get_install_candidates,
             instance_get_external_project_instances,
+            instance_get_external_detection_candidates,
+            instance_record_external_detection,
             instance_content,
             instance_get_content_items,
             instance_sync_content_files,
@@ -636,6 +638,30 @@ pub async fn instance_get_external_project_instances(
 ) -> Result<Vec<String>> {
     Ok(refract_lib::instance::get_external_project_instances(
         platform, project_id,
+    )
+    .await?)
+}
+
+#[tauri::command]
+pub async fn instance_get_external_detection_candidates(
+    instance_id: &str,
+    platform: ExternalPlatform,
+) -> Result<Vec<ExternalDetectionCandidate>> {
+    Ok(refract_lib::instance::get_external_detection_candidates(
+        instance_id,
+        platform,
+    )
+    .await?)
+}
+
+#[tauri::command]
+pub async fn instance_record_external_detection(
+    platform: ExternalPlatform,
+    checked: Vec<String>,
+    matches: Vec<DetectedExternalFile>,
+) -> Result<()> {
+    Ok(refract_lib::instance::record_external_detection(
+        platform, checked, matches,
     )
     .await?)
 }

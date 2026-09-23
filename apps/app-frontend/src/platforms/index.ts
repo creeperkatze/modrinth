@@ -24,6 +24,8 @@ export interface ContentPlatform {
 	/** Path prefix shared by all of this platform's project page routes. */
 	projectPathPrefix: string
 	projectRoute: (projectId: string | number, query?: LocationQueryRaw) => RouteLocationRaw
+	/** In-app profile page of a user, listing their projects. */
+	userRoute: (userId: string | number) => string
 }
 
 const messages = defineMessages({
@@ -47,6 +49,7 @@ export const CONTENT_PLATFORMS: Record<ContentPlatformId, ContentPlatform> = {
 		defaultProjectType: 'modpack',
 		projectPathPrefix: '/project/',
 		projectRoute: (projectId, query) => ({ path: `/project/${projectId}`, query }),
+		userRoute: (userId) => `/user/${encodeURIComponent(userId)}`,
 	},
 	curseforge: {
 		id: 'curseforge',
@@ -55,8 +58,9 @@ export const CONTENT_PLATFORMS: Record<ContentPlatformId, ContentPlatform> = {
 		description: messages.curseforgeDescription,
 		projectTypes: ['mod', 'resourcepack', 'datapack', 'shader'],
 		defaultProjectType: 'mod',
-		projectPathPrefix: '/curseforge/',
-		projectRoute: (projectId, query) => ({ path: `/curseforge/${projectId}`, query }),
+		projectPathPrefix: '/curseforge/project/',
+		projectRoute: (projectId, query) => ({ path: `/curseforge/project/${projectId}`, query }),
+		userRoute: (userId) => `/curseforge/user/${encodeURIComponent(userId)}`,
 	},
 }
 

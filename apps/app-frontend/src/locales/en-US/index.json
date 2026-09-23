@@ -371,9 +371,6 @@
   "app.curseforge.project.details.downloads": {
     "message": "{count, plural, one {# download} other {# downloads}}"
   },
-  "app.curseforge.project.details.id": {
-    "message": "Project ID {id}"
-  },
   "app.curseforge.project.details.updated": {
     "message": "Updated {date}"
   },
@@ -385,9 +382,6 @@
   },
   "app.curseforge.project.links.issues": {
     "message": "Issues"
-  },
-  "app.curseforge.project.links.page": {
-    "message": "CurseForge page"
   },
   "app.curseforge.project.links.source": {
     "message": "Source"
@@ -424,6 +418,24 @@
   },
   "app.curseforge.restricted.title": {
     "message": "Some files must be downloaded manually"
+  },
+  "app.curseforge.user.downloads": {
+    "message": "{count, plural, one {download} other {downloads}}"
+  },
+  "app.curseforge.user.joined": {
+    "message": "Joined"
+  },
+  "app.curseforge.user.load-failed": {
+    "message": "Could not load this user from CurseForge."
+  },
+  "app.curseforge.user.no-projects": {
+    "message": "This user hasn't published any projects that Refract supports."
+  },
+  "app.curseforge.user.projects": {
+    "message": "{count, plural, one {project} other {projects}}"
+  },
+  "app.curseforge.user.view-on-curseforge": {
+    "message": "View on CurseForge"
   },
   "app.discover.back-to-instance": {
     "message": "Back to instance"
@@ -2903,6 +2915,12 @@
   "app.settings.operating-system.macos": {
     "message": "macOS"
   },
+  "app.settings.platforms.default-platform.description": {
+    "message": "Used to identify content added outside of Refract, such as files copied into the mods folder, when more than one platform recognizes it. Content installed from a platform always links to that platform."
+  },
+  "app.settings.platforms.default-platform.title": {
+    "message": "Default platform"
+  },
   "app.settings.privacy.discord-rich-presence.description": {
     "message": "Show Refract as your current activity on Discord. This does not affect Rich Presence added to instances by mods. Requires an app restart."
   },
@@ -3280,6 +3298,9 @@
   },
   "app.settings.tabs.language": {
     "message": "Language"
+  },
+  "app.settings.tabs.platforms": {
+    "message": "Platforms"
   },
   "app.settings.tabs.privacy": {
     "message": "Privacy"

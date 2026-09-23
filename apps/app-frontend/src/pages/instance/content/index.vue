@@ -127,6 +127,7 @@ import { useRoute, useRouter } from 'vue-router'
 import ExportModal from '@/components/ui/ExportModal.vue'
 import SyncedContentModal from '@/components/ui/instance/SyncedContentModal.vue'
 import ShareModalWrapper from '@/components/ui/modal/ShareModalWrapper.vue'
+import { useCurseForgeDetection } from '@/composables/curseforge/use-curseforge-detection'
 import { useManagedContentPolicy } from '@/composables/instances/use-managed-content-policy'
 import { useSyncedPackActions } from '@/composables/instances/use-synced-pack-actions'
 import { useAppEvent } from '@/composables/use-app-event'
@@ -263,6 +264,10 @@ const contentQuery = useQuery(
 )
 const loading = ref(contentQuery.data.value === undefined)
 const projects = ref<ContentItem[]>([])
+useCurseForgeDetection(
+	() => instancePage.instanceId.value,
+	() => contentQuery.dataUpdatedAt.value,
+)
 
 const installingBuffer = ref<ContentItem[]>([])
 const handledInstallRevision = ref(0)
@@ -1651,7 +1656,10 @@ function externalContentOwner(item: ContentItem): ContentOwner | undefined {
 		id: `${source.platform}:${source.author_name}`,
 		name: source.author_name,
 		type: 'user',
-		link: source.author_url ?? undefined,
+		link:
+			source.author_id && isContentPlatformId(source.platform)
+				? CONTENT_PLATFORMS[source.platform].userRoute(source.author_id)
+				: (source.author_url ?? undefined),
 	}
 }
 

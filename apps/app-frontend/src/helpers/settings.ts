@@ -9,6 +9,7 @@ import { invoke } from '@tauri-apps/api/core'
 import type { FeatureFlag } from '@/composables/use-app-settings.ts'
 import type { ColorTheme } from '@/composables/use-theme.ts'
 import type { Hooks, MemorySettings, WindowSize } from '@/helpers/types'
+import type { ContentPlatformId } from '@/platforms'
 
 // Settings object
 /*
@@ -72,6 +73,8 @@ export type AppSettings = {
 	friends_online_collapsed: boolean
 	friends_offline_collapsed: boolean
 	friends_pending_collapsed: boolean
+	/** Platform that content added outside the app is attributed to when several recognise it. */
+	default_content_platform: ContentPlatformId
 	refocus_on_game_close: boolean
 	compact_instance_cards: boolean
 	show_play_time: boolean

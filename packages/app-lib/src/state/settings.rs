@@ -43,6 +43,8 @@ pub struct Settings {
     #[serde(default)]
     pub dismissed_photosensitivity_filter_warning: bool,
     #[serde(default)]
+    pub default_content_platform: ContentPlatform,
+    #[serde(default)]
     pub friends_active_collapsed: bool,
     #[serde(default)]
     pub friends_online_collapsed: bool,
@@ -136,6 +138,7 @@ impl Settings {
 				friends_online_collapsed,
 				friends_offline_collapsed,
 				friends_pending_collapsed,
+				default_content_platform,
                 version
             FROM settings
             "
@@ -165,6 +168,9 @@ impl Settings {
             friends_online_collapsed: res.friends_online_collapsed == 1,
             friends_offline_collapsed: res.friends_offline_collapsed == 1,
             friends_pending_collapsed: res.friends_pending_collapsed == 1,
+            default_content_platform: ContentPlatform::from_string(
+                &res.default_content_platform,
+            ),
             telemetry: res.telemetry == 1,
             discord_rpc: res.discord_rpc == 1,
             developer_mode: res.developer_mode == 1,
@@ -235,6 +241,7 @@ impl Settings {
         let extra_launch_args = serde_json::to_string(&self.extra_launch_args)?;
         let custom_env_vars = serde_json::to_string(&self.custom_env_vars)?;
         let feature_flags = serde_json::to_string(&self.feature_flags)?;
+        let default_content_platform = self.default_content_platform.as_str();
         let version = self.version as i64;
 
         sqlx::query!(
@@ -302,7 +309,8 @@ impl Settings {
 				friends_active_collapsed = $50,
 				friends_online_collapsed = $51,
 				friends_offline_collapsed = $52,
-				friends_pending_collapsed = $53
+				friends_pending_collapsed = $53,
+				default_content_platform = $54
             ",
             max_concurrent_writes,
             max_concurrent_downloads,
@@ -357,6 +365,7 @@ impl Settings {
             self.friends_online_collapsed,
             self.friends_offline_collapsed,
             self.friends_pending_collapsed,
+            default_content_platform,
         )
         .execute(exec)
         .await?;
@@ -491,6 +500,44 @@ pub struct Hooks {
     pub wrapper: Option<String>,
     #[serde_as(as = "serde_with::NoneAsEmptyString")]
     pub post_exit: Option<String>,
+}
+
+/// The platform content added outside the app is attributed to when several platforms recognise it.
+#[derive(
+    Serialize, Deserialize, Debug, Clone, Copy, Default, Eq, PartialEq,
+)]
+pub enum ContentPlatform {
+    #[default]
+    #[serde(rename = "modrinth")]
+    Modrinth,
+    #[serde(rename = "curseforge")]
+    CurseForge,
+}
+
+impl ContentPlatform {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Modrinth => "modrinth",
+            Self::CurseForge => "curseforge",
+        }
+    }
+
+    pub fn from_string(string: &str) -> Self {
+        match string {
+            "curseforge" => Self::CurseForge,
+            _ => Self::Modrinth,
+        }
+    }
+
+    /// The external platform this is, or `None` for Modrinth.
+    pub fn external(self) -> Option<crate::state::ExternalPlatform> {
+        match self {
+            Self::Modrinth => None,
+            Self::CurseForge => {
+                Some(crate::state::ExternalPlatform::CurseForge)
+            }
+        }
+    }
 }
 
 /// Opening window to start with

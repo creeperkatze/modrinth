@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { CheckIcon, ExternalIcon, PlusIcon, SearchIcon, SpinnerIcon } from '@modrinth/assets'
+import { SearchIcon } from '@modrinth/assets'
 import {
 	Admonition,
-	Button,
 	Combobox,
 	type ComboboxOption,
 	commonMessages,
@@ -12,17 +11,16 @@ import {
 	LoadingIndicator,
 	NavTabs,
 	Pagination,
-	ProjectCard,
 	ProjectCardList,
 	useVIntl,
 } from '@modrinth/ui'
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { openUrl } from '@tauri-apps/plugin-opener'
 import { refDebounced } from '@vueuse/core'
 import { type Mod, ModsSearchSortField, type SortOrder } from 'curseforge-js'
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
+import CurseForgeProjectCard from '@/components/ui/curseforge/CurseForgeProjectCard.vue'
 import { useCurseForgeInstall } from '@/composables/curseforge/use-curseforge-install'
 import {
 	CURSEFORGE_CLASS_IDS,
@@ -116,14 +114,6 @@ const messages = defineMessages({
 	noResults: {
 		id: 'app.browse.curseforge.no-results',
 		defaultMessage: 'No results found for your query!',
-	},
-	downloadOnCurseForge: {
-		id: 'app.browse.curseforge.download-on-curseforge',
-		defaultMessage: 'Download on CurseForge',
-	},
-	downloadOnCurseForgeTooltip: {
-		id: 'app.browse.curseforge.download-on-curseforge.tooltip',
-		defaultMessage: "This project's author doesn't allow downloads from other apps",
 	},
 })
 
@@ -282,16 +272,6 @@ function projectLink(mod: Mod) {
 		b: route.fullPath,
 	})
 }
-
-function isRestricted(mod: Mod) {
-	return mod.allowModDistribution === false
-}
-
-function openOnCurseForge(mod: Mod) {
-	if (mod.links?.websiteUrl) {
-		void openUrl(mod.links.websiteUrl)
-	}
-}
 </script>
 
 <template>
@@ -370,55 +350,16 @@ function openOnCurseForge(mod: Mod) {
 				<p>{{ formatMessage(messages.noResults) }}</p>
 			</section>
 			<ProjectCardList v-else layout="list">
-				<ProjectCard
+				<CurseForgeProjectCard
 					v-for="mod in results"
 					:key="mod.id"
+					:mod="mod"
 					:link="projectLink(mod)"
-					:title="mod.name"
-					:icon-url="mod.logo?.thumbnailUrl || mod.logo?.url || undefined"
-					:author="
-						mod.authors[0] ? { name: mod.authors[0].name, link: mod.authors[0].url } : undefined
-					"
-					:summary="mod.summary"
-					:tags="mod.categories.map((category) => category.name)"
-					:downloads="mod.downloadCount"
-					:date-updated="mod.dateModified"
-					:date-published="mod.dateReleased"
+					:installed="isInstalled(mod)"
+					:installing="installing.has(mod.id)"
 					:displayed-date="sortKey === 'newest' ? 'published' : 'updated'"
-					layout="list"
-				>
-					<template #actions>
-						<Button
-							v-if="isRestricted(mod)"
-							v-tooltip="formatMessage(messages.downloadOnCurseForgeTooltip)"
-							type="outlined"
-							@click.stop="openOnCurseForge(mod)"
-						>
-							<ExternalIcon />
-							{{ formatMessage(messages.downloadOnCurseForge) }}
-						</Button>
-						<Button
-							v-else
-							type="outlined"
-							class="!text-brand [&>svg]:!text-brand !shadow-[inset_0_0_0_1px_var(--color-brand)]"
-							:disabled="isInstalled(mod) || installing.has(mod.id)"
-							@click.stop="install(mod)"
-						>
-							<SpinnerIcon v-if="installing.has(mod.id)" class="animate-spin" />
-							<CheckIcon v-else-if="isInstalled(mod)" />
-							<PlusIcon v-else />
-							{{
-								formatMessage(
-									installing.has(mod.id)
-										? commonMessages.installingLabel
-										: isInstalled(mod)
-											? commonMessages.installedLabel
-											: commonMessages.installButton,
-								)
-							}}
-						</Button>
-					</template>
-				</ProjectCard>
+					@install="install(mod)"
+				/>
 			</ProjectCardList>
 		</div>
 

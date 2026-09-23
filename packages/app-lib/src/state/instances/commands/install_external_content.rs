@@ -47,6 +47,7 @@ pub(crate) async fn install_external_file(
     external_source_rows::upsert_external_source(
         &request.sha1,
         &request.source,
+        false,
         &state.pool,
     )
     .await?;

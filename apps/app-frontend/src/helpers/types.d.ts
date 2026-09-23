@@ -252,6 +252,7 @@ type AppSettings = {
 	friends_online_collapsed: boolean
 	friends_offline_collapsed: boolean
 	friends_pending_collapsed: boolean
+	default_content_platform: 'modrinth' | 'curseforge'
 	refocus_on_game_close: boolean
 	compact_instance_cards: boolean
 	show_play_time: boolean

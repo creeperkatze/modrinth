@@ -1,6 +1,7 @@
 import type { ExternalContentSource } from '@modrinth/ui'
 import { getVersion } from '@tauri-apps/api/app'
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http'
+import { queryOptions } from '@tanstack/vue-query'
 import CurseForgeClient, {
 	type File as CurseForgeFile,
 	FileRelationType,
@@ -8,6 +9,8 @@ import CurseForgeClient, {
 	HashAlgo,
 	type Mod,
 	ModLoaderType,
+	resolveAvatarUrl,
+	type User,
 } from 'curseforge-js'
 
 import { config } from '@/config'
@@ -65,6 +68,22 @@ export function hasCurseForgeApiKey(): boolean {
 
 export function curseForgeModQueryKey(modId: number) {
 	return ['curseforge', 'mod', modId] as const
+}
+
+/** A CurseForge user's profile. The endpoint is undocumented, so failures are not retried. */
+export function curseForgeUserQueryOptions(userId: number) {
+	return queryOptions({
+		queryKey: ['curseforge', 'user', userId] as const,
+		queryFn: async () => (await getCurseForgeClient()).users.get(userId),
+		enabled: hasCurseForgeApiKey() && Number.isFinite(userId),
+		retry: false,
+		staleTime: 5 * 60_000,
+	})
+}
+
+/** A fetchable avatar image for a CurseForge user. */
+export function curseForgeAvatarUrl(user: User | undefined, size = '150x150'): string | undefined {
+	return user?.avatarUrl ? resolveAvatarUrl(user.avatarUrl, size) : undefined
 }
 
 let clientPromise: Promise<CurseForgeClient> | null = null
@@ -172,6 +191,7 @@ export function toExternalSource(mod: Mod, file: CurseForgeFile): ExternalConten
 		project_title: mod.name,
 		project_icon_url: mod.logo?.thumbnailUrl || mod.logo?.url || null,
 		project_url: mod.links?.websiteUrl || null,
+		author_id: author ? String(author.id) : null,
 		author_name: author?.name ?? null,
 		author_url: author?.url ?? null,
 		file_display_name: file.displayName,

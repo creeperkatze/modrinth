@@ -1,8 +1,9 @@
 use crate::state::instances::adapters::sqlite::external_source_rows;
 use crate::state::{
     CacheBehaviour, ContentFile, ContentItem, ContentSet, Dependency,
-    ExternalPlatform, InstanceInstallCandidate, InstanceInstallTarget,
-    LinkedModpackInfo, ProjectType, State,
+    DetectedExternalFile, ExternalDetectionCandidate, ExternalPlatform,
+    InstanceInstallCandidate, InstanceInstallTarget, LinkedModpackInfo,
+    ProjectType, State,
 };
 use dashmap::DashMap;
 
@@ -25,6 +26,35 @@ pub async fn get_external_project_instances(
         platform,
         project_id,
         &state.pool,
+    )
+    .await
+}
+
+/// Returns the files in an instance that should be looked up on `platform`, with their fingerprints.
+#[tracing::instrument]
+pub async fn get_external_detection_candidates(
+    instance_id: &str,
+    platform: ExternalPlatform,
+) -> crate::Result<Vec<ExternalDetectionCandidate>> {
+    let state = State::get().await?;
+    crate::state::get_external_detection_candidates(
+        instance_id,
+        platform,
+        &state,
+    )
+    .await
+}
+
+/// Stores the files identified on `platform` and remembers every file that was looked up.
+#[tracing::instrument(skip(checked, matches))]
+pub async fn record_external_detection(
+    platform: ExternalPlatform,
+    checked: Vec<String>,
+    matches: Vec<DetectedExternalFile>,
+) -> crate::Result<()> {
+    let state = State::get().await?;
+    crate::state::record_external_detection(
+        platform, &checked, &matches, &state,
     )
     .await
 }

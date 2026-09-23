@@ -25,10 +25,11 @@ pub(crate) mod synced_servers;
 
 pub use self::content::{
     get_content_items, get_dependencies_as_content_items,
-    get_external_project_instances, get_install_candidates,
-    get_installed_project_ids, get_linked_modpack_content,
-    get_linked_modpack_info, get_projects, list_content_sets,
-    refresh_content_updates, sync_content_files,
+    get_external_detection_candidates, get_external_project_instances,
+    get_install_candidates, get_installed_project_ids,
+    get_linked_modpack_content, get_linked_modpack_info, get_projects,
+    list_content_sets, record_external_detection, refresh_content_updates,
+    sync_content_files,
 };
 pub use self::export_mrpack::{
     PackExportCandidate, create_mrpack_json, export_mrpack,

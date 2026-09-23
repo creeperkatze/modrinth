@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ExternalIcon } from '@modrinth/assets'
 import { Avatar, commonMessages, defineMessages, TagItem, TagTagItem, useVIntl } from '@modrinth/ui'
+import { RouterLink } from 'vue-router'
 
 import type { ProjectCreator, ProjectDetail, ProjectLink } from './types'
 
@@ -64,12 +65,13 @@ const messages = defineMessages({
 
 	<section v-if="creators.length > 0" class="sidebar-section">
 		<h2 class="m-0 text-lg">{{ formatMessage(messages.creators) }}</h2>
-		<a
+		<component
+			:is="creator.link ? RouterLink : 'span'"
 			v-for="creator in creators"
 			:key="creator.id"
-			:href="creator.url ?? undefined"
-			target="_blank"
-			class="flex w-fit items-center gap-2 font-semibold text-primary hover:underline"
+			:to="creator.link ?? undefined"
+			class="flex w-fit items-center gap-2 font-semibold text-primary"
+			:class="{ 'hover:underline': creator.link }"
 		>
 			<Avatar
 				:src="creator.avatarUrl"
@@ -79,7 +81,7 @@ const messages = defineMessages({
 				circle
 			/>
 			{{ creator.name }}
-		</a>
+		</component>
 	</section>
 
 	<section v-if="details.length > 0" class="sidebar-section">

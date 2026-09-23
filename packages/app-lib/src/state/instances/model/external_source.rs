@@ -47,6 +47,8 @@ pub struct ExternalContentSource {
     pub project_title: String,
     pub project_icon_url: Option<String>,
     pub project_url: Option<String>,
+    #[serde(default)]
+    pub author_id: Option<String>,
     pub author_name: Option<String>,
     pub author_url: Option<String>,
     pub file_display_name: Option<String>,
@@ -67,4 +69,19 @@ pub struct InstallExternalFileRequest {
     /// An installed file of the same project, relative to the instance, that this file replaces.
     #[serde(default)]
     pub replace_path: Option<String>,
+}
+
+/// A file with no known origin that could be identified on an external platform.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ExternalDetectionCandidate {
+    pub sha1: String,
+    /// The platform's fingerprint of the file, such as CurseForge's Murmur2 hash.
+    pub fingerprint: u32,
+}
+
+/// A file identified on an external platform by its fingerprint.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DetectedExternalFile {
+    pub sha1: String,
+    pub source: ExternalContentSource,
 }

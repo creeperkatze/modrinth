@@ -4,16 +4,17 @@ use super::sync_content_files::{
 use crate::State;
 use crate::pack::install_from::{PackFileHash, PackFormat};
 use crate::state::instances::adapters::sqlite;
+use crate::state::instances::adapters::sqlite::external_source_rows::StoredExternalSource;
 use crate::state::instances::{
-    ContentEntry, ContentSet, ContentSourceKind, Instance,
-    InstanceInstallCandidate, InstanceInstallTarget, InstanceLink,
+    ContentEntry, ContentSet, ContentSourceKind, ExternalContentSource,
+    Instance, InstanceInstallCandidate, InstanceInstallTarget, InstanceLink,
 };
 use crate::state::{
     CacheBehaviour, CachedEntry, CachedFile, ContentFile, ContentItem,
-    ContentItemOwner, ContentItemProject, ContentItemVersion, Dependency,
-    LinkedModpackInfo, ModLoader, Organization, OwnerType, Project,
-    ProjectType, ReleaseChannel, TeamMember, Version, VersionEnvironment,
-    VersionV3,
+    ContentItemOwner, ContentItemProject, ContentItemVersion, ContentPlatform,
+    Dependency, LinkedModpackInfo, ModLoader, Organization, OwnerType, Project,
+    ProjectType, ReleaseChannel, Settings, TeamMember, Version,
+    VersionEnvironment, VersionV3,
 };
 use crate::util::fetch::{DownloadMeta, DownloadReason, FetchSemaphore};
 use async_zip::tokio::read::fs::ZipFileReader;
@@ -744,10 +745,35 @@ async fn content_projects_for_scope_inner(
         &state.api_semaphore,
     )
     .await?;
-    let file_info_by_hash = file_info
+    let mut file_info_by_hash = file_info
         .into_iter()
         .map(|file| (file.hash.clone(), file))
         .collect::<HashMap<_, _>>();
+    let stored_sources = sqlite::external_source_rows::get_external_sources(
+        &hashes,
+        &state.pool,
+    )
+    .await?;
+    let preferred_platform =
+        Settings::get(&state.pool).await?.default_content_platform;
+    let attributed_sources = files
+        .iter()
+        .filter_map(|file| {
+            let entry = entries_by_file_id.get(file.id.as_str());
+            attributed_external_source(
+                entry.is_some_and(|entry| entry.project_id.is_some()),
+                stored_sources.get(&file.sha1),
+                file_info_by_hash.contains_key(&file.sha1),
+                preferred_platform,
+            )
+            .map(|source| (file.id.clone(), source))
+        })
+        .collect::<HashMap<_, _>>();
+    for file in &files {
+        if attributed_sources.contains_key(&file.id) {
+            file_info_by_hash.remove(&file.sha1);
+        }
+    }
     let installed_channels = if packs_only {
         HashMap::new()
     } else {
@@ -886,6 +912,7 @@ async fn content_projects_for_scope_inner(
                 metadata: file_metadata_from_entry_or_cache(entry, metadata),
                 project_type,
                 source_kind: entry.map(|entry| entry.source_kind),
+                external_source: attributed_sources.get(&file.id).cloned(),
             },
         );
     }
@@ -992,15 +1019,6 @@ async fn content_files_to_content_items(
             instance, loader, files, state,
         )
         .await?;
-    let hashes = files
-        .iter()
-        .map(|(_, file)| file.hash.as_str())
-        .collect::<Vec<_>>();
-    let external_sources = sqlite::external_source_rows::get_external_sources(
-        &hashes,
-        &state.pool,
-    )
-    .await?;
     let instance_path = state.directories.instances_dir().join(&instance.path);
     let paths = files
         .iter()
@@ -1068,7 +1086,7 @@ async fn content_files_to_content_items(
                 date_added: modification_times[index].clone(),
                 source_kind: file.source_kind,
                 embedded_metadata: embedded_metadata.get(&file.hash).cloned(),
-                external_source: external_sources.get(&file.hash).cloned(),
+                external_source: file.external_source.clone(),
             }
         })
         .collect::<Vec<_>>();
@@ -1248,6 +1266,26 @@ fn content_item_project(project: &Project) -> ContentItemProject {
         categories: project.categories.clone(),
         additional_categories: project.additional_categories.clone(),
     }
+}
+
+/// The external source a file is attributed to, or `None` when it belongs to Modrinth or is unknown.
+///
+/// How a file was installed takes precedence over identifying it afterwards. A file identified on
+/// several platforms goes to the preferred one.
+fn attributed_external_source(
+    installed_from_modrinth: bool,
+    stored: Option<&StoredExternalSource>,
+    on_modrinth: bool,
+    preferred: ContentPlatform,
+) -> Option<ExternalContentSource> {
+    if installed_from_modrinth {
+        return None;
+    }
+    let stored = stored?;
+    let attributed = !stored.detected
+        || !on_modrinth
+        || preferred.external() == Some(stored.source.platform);
+    attributed.then(|| stored.source.clone())
 }
 
 fn file_metadata_from_entry_or_cache(

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
-use super::instances::ContentSourceKind;
+use super::instances::{ContentSourceKind, ExternalContentSource};
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, Eq, PartialEq)]
 #[serde(rename_all = "snake_case")]
@@ -130,6 +130,9 @@ pub struct ContentFile {
     pub update_version_id: Option<String>,
     pub project_type: ProjectType,
     pub source_kind: Option<ContentSourceKind>,
+    /// The external platform the file is attributed to, in which case `metadata` is empty.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub external_source: Option<ExternalContentSource>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

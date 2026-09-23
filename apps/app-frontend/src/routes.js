@@ -109,7 +109,12 @@ export default new createRouter({
 			],
 		},
 		{
-			path: '/curseforge/:id',
+			path: '/curseforge/user/:id/:projectType?',
+			name: 'CurseForgeUser',
+			component: () => import('@/pages/curseforge/User.vue'),
+		},
+		{
+			path: '/curseforge/project/:id',
 			name: 'CurseForgeProject',
 			component: () => import('@/pages/curseforge/Project.vue'),
 			children: [

@@ -4,10 +4,8 @@ import {
 	CheckIcon,
 	ClipboardCopyIcon,
 	CodeIcon,
-	CurseForgeIcon,
 	DownloadIcon,
 	ExternalIcon,
-	GlobeIcon,
 	IssuesIcon,
 	MoreVerticalIcon,
 	SpinnerIcon,
@@ -19,10 +17,9 @@ import {
 	defineMessages,
 	TeleportOverflowMenu,
 	useFormatDateTime,
-	useFormatNumber,
 	useVIntl,
 } from '@modrinth/ui'
-import { useQuery } from '@tanstack/vue-query'
+import { useQueries, useQuery } from '@tanstack/vue-query'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import type { File as CurseForgeFile } from 'curseforge-js'
 import { computed, shallowRef, watch } from 'vue'
@@ -43,6 +40,8 @@ import {
 	compareGameVersionsDesc,
 	contentTypeFromClassId,
 	curseForgeModQueryKey,
+	curseForgeAvatarUrl,
+	curseForgeUserQueryOptions,
 	getCurseForgeClient,
 	hasCurseForgeApiKey,
 	LOADER_TAGS,
@@ -52,7 +51,6 @@ import { instanceDetailQueryOptions } from '@/pages/instance/query-options'
 import { CONTENT_PLATFORMS, projectBrowseRoute } from '@/platforms'
 
 const { formatMessage } = useVIntl()
-const formatNumber = useFormatNumber()
 const formatDate = useFormatDateTime({ year: 'numeric', month: 'long', day: 'numeric' })
 const route = useRoute()
 const router = useRouter()
@@ -89,7 +87,6 @@ const messages = defineMessages({
 		id: 'app.curseforge.project.back-to-instance',
 		defaultMessage: 'Back to instance',
 	},
-	projectPage: { id: 'app.curseforge.project.links.page', defaultMessage: 'CurseForge page' },
 	wiki: { id: 'app.curseforge.project.links.wiki', defaultMessage: 'Wiki' },
 	issues: { id: 'app.curseforge.project.links.issues', defaultMessage: 'Issues' },
 	source: { id: 'app.curseforge.project.links.source', defaultMessage: 'Source' },
@@ -99,7 +96,6 @@ const messages = defineMessages({
 		id: 'app.curseforge.project.details.downloads',
 		defaultMessage: '{count, plural, one {# download} other {# downloads}}',
 	},
-	projectId: { id: 'app.curseforge.project.details.id', defaultMessage: 'Project ID {id}' },
 })
 
 const platform = CONTENT_PLATFORMS.curseforge
@@ -229,18 +225,23 @@ const links = computed<ProjectLink[]>(() => {
 	const projectLinks = mod.value?.links
 	if (!projectLinks) return []
 	return [
-		{ icon: GlobeIcon, label: formatMessage(messages.projectPage), url: projectLinks.websiteUrl },
 		{ icon: WikiIcon, label: formatMessage(messages.wiki), url: projectLinks.wikiUrl },
 		{ icon: IssuesIcon, label: formatMessage(messages.issues), url: projectLinks.issuesUrl },
 		{ icon: CodeIcon, label: formatMessage(messages.source), url: projectLinks.sourceUrl },
 	].filter((link) => !!link.url)
 })
+const authorQueries = useQueries({
+	queries: computed(() =>
+		(mod.value?.authors ?? []).map((author) => curseForgeUserQueryOptions(author.id)),
+	),
+})
 const creators = computed<ProjectCreator[]>(
 	() =>
-		mod.value?.authors.map((author) => ({
+		mod.value?.authors.map((author, index) => ({
 			id: String(author.id),
 			name: author.name,
-			url: author.url,
+			link: platform.userRoute(author.id),
+			avatarUrl: curseForgeAvatarUrl(authorQueries.value[index]?.data, '50x50'),
 		})) ?? [],
 )
 const details = computed<ProjectDetail[]>(() => {
@@ -258,12 +259,7 @@ const details = computed<ProjectDetail[]>(() => {
 		},
 		{
 			icon: DownloadIcon,
-			text: formatMessage(messages.downloads, { count: formatNumber(mod.value.downloadCount) }),
-		},
-		{
-			icon: CurseForgeIcon,
-			text: formatMessage(messages.projectId, { id: mod.value.id }),
-			secondary: true,
+			text: formatMessage(messages.downloads, { count: mod.value.downloadCount }),
 		},
 	]
 })

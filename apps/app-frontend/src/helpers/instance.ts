@@ -7,6 +7,7 @@ import type { Labrinth } from '@modrinth/api-client'
 import type {
 	ContentItem,
 	ContentOwner,
+	ExternalContentSource,
 	ExternalPlatform,
 } from '@modrinth/ui'
 import { convertFileSrc, invoke } from '@tauri-apps/api/core'
@@ -86,6 +87,41 @@ export async function get_external_project_instances(
 	return await invoke('plugin:instance|instance_get_external_project_instances', {
 		platform,
 		projectId,
+	})
+}
+
+/** A file with no known origin, with the fingerprint used to look it up on an external platform. */
+export type ExternalDetectionCandidate = {
+	sha1: string
+	fingerprint: number
+}
+
+export type DetectedExternalFile = {
+	sha1: string
+	source: ExternalContentSource
+}
+
+/** Files in an instance that should be looked up on `platform` to find where they came from. */
+export async function get_external_detection_candidates(
+	instanceId: string,
+	platform: ExternalPlatform,
+): Promise<ExternalDetectionCandidate[]> {
+	return await invoke('plugin:instance|instance_get_external_detection_candidates', {
+		instanceId,
+		platform,
+	})
+}
+
+/** Stores the files identified on `platform`, and remembers that every `checked` file was looked up. */
+export async function record_external_detection(
+	platform: ExternalPlatform,
+	checked: string[],
+	matches: DetectedExternalFile[],
+): Promise<void> {
+	await invoke('plugin:instance|instance_record_external_detection', {
+		platform,
+		checked,
+		matches,
 	})
 }
 

@@ -68,6 +68,7 @@ export interface ExternalContentSource {
 	project_title: string
 	project_icon_url?: string | null
 	project_url?: string | null
+	author_id?: string | null
 	author_name?: string | null
 	author_url?: string | null
 	file_display_name?: string | null

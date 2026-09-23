@@ -213,6 +213,8 @@ fn main() {
                         "instance_get_installed_project_ids",
                         "instance_get_install_candidates",
                         "instance_get_external_project_instances",
+                        "instance_get_external_detection_candidates",
+                        "instance_record_external_detection",
                         "instance_content",
                         "instance_get_content_items",
                         "instance_sync_content_files",

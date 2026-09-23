@@ -49,6 +49,11 @@ pub(crate) use self::apply_content_install::*;
 mod install_external_content;
 pub(crate) use self::install_external_content::install_external_file;
 
+mod detect_external_content;
+pub(crate) use self::detect_external_content::{
+    get_external_detection_candidates, record_external_detection,
+};
+
 mod content_mutation;
 pub(crate) use self::content_mutation::{
     ContentOrigin, InstallContent, install_stored_file, remove_project,
