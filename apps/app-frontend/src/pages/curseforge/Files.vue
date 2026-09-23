@@ -21,7 +21,7 @@ import { computed, ref, watch } from 'vue'
 
 import { SwapIcon } from '@/assets/icons/index.js'
 import {
-	type CurseForgeContentType,
+	type CurseForgeProjectType,
 	fileGameVersions,
 	fileLoaders,
 	fileSupportsLoaders,
@@ -33,7 +33,7 @@ import type { GameInstance } from '@/helpers/types'
 
 const props = defineProps<{
 	mod: Mod
-	contentType: CurseForgeContentType | null
+	contentType: CurseForgeProjectType | null
 	instance: GameInstance | null
 	installedFileId: string | null
 	installing: boolean

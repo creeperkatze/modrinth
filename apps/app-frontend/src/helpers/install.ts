@@ -55,7 +55,15 @@ export interface PackLocationFile {
 	path: string
 }
 
-export type CreatePackLocation = PackLocationVersionId | PackLocationFile
+export interface PackLocationCurseForge {
+	type: 'fromCurseForge'
+	project_id: string
+	file_id: string
+	title: string
+	icon_url?: string | null
+}
+
+export type CreatePackLocation = PackLocationVersionId | PackLocationFile | PackLocationCurseForge
 
 export interface InstallModpackPreview {
 	name: string

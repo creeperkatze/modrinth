@@ -38,7 +38,7 @@ import type {
 import { useCurseForgeInstall } from '@/composables/curseforge/use-curseforge-install'
 import {
 	compareGameVersionsDesc,
-	contentTypeFromClassId,
+	projectTypeFromClassId,
 	curseForgeModQueryKey,
 	curseForgeAvatarUrl,
 	curseForgeUserQueryOptions,
@@ -126,7 +126,7 @@ const modQuery = useQuery(
 	})),
 )
 const mod = computed(() => modQuery.data.value ?? null)
-const contentType = computed(() => (mod.value ? contentTypeFromClassId(mod.value.classId) : null))
+const contentType = computed(() => (mod.value ? projectTypeFromClassId(mod.value.classId) : null))
 
 const instanceQuery = useQuery(
 	computed(() => ({
@@ -173,7 +173,7 @@ const tabs = computed<ProjectPageTab[]>(() => [
 ])
 
 const installContext = computed(() => {
-	if (!instance.value) return null
+	if (!instance.value || contentType.value === 'modpack') return null
 	const fromBrowse = typeof displayedRoute.value.query.b === 'string'
 	return {
 		name: instance.value.name,

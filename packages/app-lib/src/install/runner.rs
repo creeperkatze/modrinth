@@ -1390,7 +1390,8 @@ async fn remove_existing_pack_content(
             content_version_id,
             ..
         } => (content_project_id.clone(), content_version_id.clone()),
-        InstanceLink::ImportedModpack { .. } => {
+        InstanceLink::ImportedModpack { .. }
+        | InstanceLink::CurseForgeModpack { .. } => {
             remove_existing_imported_pack_content(
                 instance_id,
                 &metadata,
@@ -1552,6 +1553,22 @@ pub(super) async fn install_pack(
                 )
                 .await?;
             generate_pack_from_file(path, instance_id.clone()).await?
+        }
+        CreatePackLocation::FromCurseForge {
+            project_id,
+            file_id,
+            title,
+            icon_url,
+        } => {
+            crate::api::pack::install_curseforge::generate_pack_from_curseforge(
+                project_id,
+                file_id,
+                title,
+                icon_url,
+                instance_id.clone(),
+                reporter.clone(),
+            )
+            .await?
         }
     };
 
@@ -1744,6 +1761,9 @@ fn set_initial_display(job_state: &mut InstallJobState) {
                 CreatePackLocation::FromFile { path } => {
                     Some((get_local_pack_instance(path).name, None))
                 }
+                CreatePackLocation::FromCurseForge {
+                    title, icon_url, ..
+                } => Some((title.clone(), icon_url.clone())),
             }
         }
         InstallRequest::InstallContent {
@@ -1877,6 +1897,16 @@ pub(super) fn modpack_details(
             project_id: None,
             version_id: None,
             title: None,
+        },
+        CreatePackLocation::FromCurseForge {
+            project_id,
+            file_id,
+            title,
+            ..
+        } => InstallPhaseDetails::Modpack {
+            project_id: Some(project_id.clone()),
+            version_id: Some(file_id.clone()),
+            title: Some(title.clone()),
         },
     }
 }

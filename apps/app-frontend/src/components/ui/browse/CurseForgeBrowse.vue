@@ -28,7 +28,7 @@ import {
 	getCurseForgeClient,
 	getLoaderTypes,
 	hasCurseForgeApiKey,
-	isCurseForgeContentType,
+	isCurseForgeProjectType,
 	MINECRAFT_GAME_ID,
 } from '@/helpers/curseforge'
 import type { GameInstance } from '@/helpers/types'
@@ -118,12 +118,12 @@ const messages = defineMessages({
 })
 
 const contentType = computed(() =>
-	isCurseForgeContentType(props.projectType) ? props.projectType : null,
+	isCurseForgeProjectType(props.projectType) ? props.projectType : null,
 )
 
 const tabs = computed(() =>
 	props.projectTypeTabs.filter((tab) =>
-		isCurseForgeContentType(new URL(tab.href, 'http://tabs').pathname.split('/')[2] ?? ''),
+		isCurseForgeProjectType(new URL(tab.href, 'http://tabs').pathname.split('/')[2] ?? ''),
 	),
 )
 

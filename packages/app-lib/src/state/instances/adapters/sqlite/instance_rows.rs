@@ -143,6 +143,18 @@ impl TryFrom<InstanceLinkRow> for InstanceLink {
                 version_number: row.imported_version_number,
                 filename: row.imported_filename,
             }),
+            "curseforge_modpack" => Ok(Self::CurseForgeModpack {
+                project_id: required(
+                    row.content_project_id,
+                    "content_project_id",
+                )?,
+                file_id: required(
+                    row.content_version_id,
+                    "content_version_id",
+                )?,
+                name: row.imported_name,
+                version_number: row.imported_version_number,
+            }),
             "shared_instance" => Ok(Self::SharedInstance {
                 modpack_project_id: row.modrinth_project_id,
                 modpack_version_id: row.modrinth_version_id,
@@ -1707,6 +1719,25 @@ fn instance_link_columns(
             imported_name: name.clone(),
             imported_version_number: version_number.clone(),
             imported_filename: filename.clone(),
+        }),
+        InstanceLink::CurseForgeModpack {
+            project_id,
+            file_id,
+            name,
+            version_number,
+        } => Ok(InstanceLinkColumns {
+            link_kind: "curseforge_modpack",
+            modrinth_project_id: None,
+            modrinth_version_id: None,
+            server_project_id: None,
+            content_project_id: Some(project_id.clone()),
+            content_version_id: Some(file_id.clone()),
+            hosting_server_id: None,
+            hosting_instance_ids: None,
+            hosting_active_instance_id: None,
+            imported_name: name.clone(),
+            imported_version_number: version_number.clone(),
+            imported_filename: None,
         }),
         InstanceLink::SharedInstance {
             modpack_project_id,

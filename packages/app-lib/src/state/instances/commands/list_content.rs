@@ -1306,7 +1306,11 @@ fn file_metadata_from_entry_or_cache(
 }
 
 fn is_imported_modpack_scope(link: &InstanceLink) -> bool {
-    matches!(link, InstanceLink::ImportedModpack { .. })
+    matches!(
+        link,
+        InstanceLink::ImportedModpack { .. }
+            | InstanceLink::CurseForgeModpack { .. }
+    )
 }
 
 async fn linked_modpack_ids_for_instance(

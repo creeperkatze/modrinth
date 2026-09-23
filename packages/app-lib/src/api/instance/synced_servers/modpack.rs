@@ -202,6 +202,7 @@ pub(super) fn is_modpack_link(link: &InstanceLink) -> bool {
         link,
         InstanceLink::ModrinthModpack { .. }
             | InstanceLink::ImportedModpack { .. }
+            | InstanceLink::CurseForgeModpack { .. }
             | InstanceLink::SharedInstance { .. }
     )
 }

@@ -333,7 +333,16 @@ const localImportedModpackUnlinked = ref(false)
 
 const localImportedModpackProject = computed<ManagedContentProject | null>(() => {
 	const link = instance.value.link
-	if (localImportedModpackUnlinked.value || link?.type !== 'imported_modpack') return null
+	if (localImportedModpackUnlinked.value) return null
+	if (link?.type === 'curseforge_modpack') {
+		return {
+			id: link.curseforge_project_id,
+			slug: link.curseforge_project_id,
+			title: link.name ?? instance.value.name,
+			icon_url: getInstanceIconUrl(instance.value.icon_path) ?? undefined,
+		}
+	}
+	if (link?.type !== 'imported_modpack') return null
 
 	return {
 		id: link.filename ?? instance.value.id,
@@ -512,10 +521,16 @@ const managedContent = computed<ManagedContentData | null>(() => {
 							path: `/project/${project.slug ?? project.id}`,
 							query: { i: instancePage.instanceId.value },
 						}
-					: undefined,
+					: instance.value.link?.type === 'curseforge_modpack'
+						? CONTENT_PLATFORMS.curseforge.projectRoute(instance.value.link.curseforge_project_id)
+						: undefined,
 			},
 			summary: managedContentSummary.value,
-			versionNumber: linkedModpackVersion.value?.version_number,
+			versionNumber:
+				linkedModpackVersion.value?.version_number ??
+				(instance.value.link?.type === 'curseforge_modpack'
+					? (instance.value.link.version_number ?? undefined)
+					: undefined),
 			versionLink:
 				linkedModpackProject.value && linkedModpackVersion.value
 					? {

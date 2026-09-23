@@ -19,7 +19,11 @@ if (existsSync(envFilePath)) {
 		const eqIndex = trimmed.indexOf('=')
 		if (eqIndex === -1) continue
 		const key = trimmed.slice(0, eqIndex)
-		const value = trimmed.slice(eqIndex + 1)
+		const rawValue = trimmed.slice(eqIndex + 1)
+		const quote = rawValue[0]
+		const quoted =
+			rawValue.length >= 2 && (quote === "'" || quote === '"') && rawValue.endsWith(quote)
+		const value = quoted ? rawValue.slice(1, -1) : rawValue
 		if (!(key in process.env)) {
 			process.env[key] = value
 		}

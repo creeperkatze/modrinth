@@ -28,12 +28,12 @@ import { useCurseForgeInstall } from '@/composables/curseforge/use-curseforge-in
 import {
 	curseForgeAvatarUrl,
 	CURSEFORGE_CLASS_IDS,
-	type CurseForgeContentType,
+	type CurseForgeProjectType,
 	curseForgeModQueryKey,
 	curseForgeUserQueryOptions,
 	getCurseForgeClient,
 	hasCurseForgeApiKey,
-	isCurseForgeContentType,
+	isCurseForgeProjectType,
 	MINECRAFT_GAME_ID,
 } from '@/helpers/curseforge'
 import { CONTENT_PLATFORMS } from '@/platforms'
@@ -81,7 +81,7 @@ const messages = defineMessages({
 	},
 })
 
-const contentTypes = Object.keys(CURSEFORGE_CLASS_IDS) as CurseForgeContentType[]
+const contentTypes = Object.keys(CURSEFORGE_CLASS_IDS) as CurseForgeProjectType[]
 
 const userId = computed(() => Number(route.params.id))
 
@@ -106,7 +106,7 @@ const projectsQuery = useQuery(
 			)
 			return Object.fromEntries(
 				contentTypes.map((type, index) => [type, results[index].data]),
-			) as Record<CurseForgeContentType, Mod[]>
+			) as Record<CurseForgeProjectType, Mod[]>
 		},
 		enabled: hasCurseForgeApiKey() && Number.isFinite(userId.value),
 		staleTime: 5 * 60_000,
@@ -119,9 +119,9 @@ const typesWithProjects = computed(() =>
 	contentTypes.filter((type) => (projectsByType.value?.[type]?.length ?? 0) > 0),
 )
 
-const selectedType = computed<CurseForgeContentType | null>(() => {
+const selectedType = computed<CurseForgeProjectType | null>(() => {
 	const requested = route.params.projectType
-	if (typeof requested === 'string' && isCurseForgeContentType(requested)) return requested
+	if (typeof requested === 'string' && isCurseForgeProjectType(requested)) return requested
 	return typesWithProjects.value[0] ?? null
 })
 const shownProjects = computed(() =>

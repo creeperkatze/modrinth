@@ -248,7 +248,8 @@ fn content_source_kind(link: &InstanceLink) -> ContentSourceKind {
         InstanceLink::ModrinthHosting { .. } => {
             ContentSourceKind::ModrinthHosting
         }
-        InstanceLink::ImportedModpack { .. } => {
+        InstanceLink::ImportedModpack { .. }
+        | InstanceLink::CurseForgeModpack { .. } => {
             ContentSourceKind::ImportedModpack
         }
         InstanceLink::SharedInstance { .. } => {

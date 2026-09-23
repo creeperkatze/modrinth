@@ -6,13 +6,18 @@ import { computed, type MaybeRefOrGetter, ref, toValue } from 'vue'
 import {
 	compareGameVersionsDesc,
 	type CurseForgeContentType,
+	type CurseForgeProjectType,
 	getInstalledCurseForgeFiles,
 	getLoaderTypes,
 	LOADER_TAGS,
 	NoCompatibleFileError,
 	resolveCurseForgeInstall,
 } from '@/helpers/curseforge'
-import { install_content, wait_for_install_job } from '@/helpers/install'
+import {
+	install_content,
+	install_create_modpack_instance,
+	wait_for_install_job,
+} from '@/helpers/install'
 import { get_external_project_instances } from '@/helpers/instance'
 import type { GameInstance } from '@/helpers/types'
 import { CONTENT_PLATFORMS } from '@/platforms'
@@ -191,16 +196,39 @@ export function useCurseForgeInstall(instance: MaybeRefOrGetter<GameInstance | n
 		}
 	}
 
+	/** Queues a new instance for the modpack's main file, or `file` when given. */
+	async function installModpack(mod: Mod, file?: CurseForgeFile) {
+		setInstalling(mod.id, true)
+		try {
+			await install_create_modpack_instance({
+				type: 'fromCurseForge',
+				project_id: String(mod.id),
+				file_id: String(file?.id ?? mod.mainFileId),
+				title: mod.name,
+				icon_url: mod.logo?.thumbnailUrl || mod.logo?.url || null,
+			})
+		} catch (error) {
+			handleError(error as Error)
+		} finally {
+			setInstalling(mod.id, false)
+		}
+	}
+
 	/**
-	 * Installs the newest compatible file of `mod`, or `file` when given. Without an instance, this
-	 * opens the install modal to pick or create one.
+	 * Installs the newest compatible file of `mod`, or `file` when given. Modpacks become a new
+	 * instance. Other content goes into the current instance, or without one, the install modal
+	 * opens to pick or create one.
 	 */
-	async function install(mod: Mod, contentType: CurseForgeContentType, file?: CurseForgeFile) {
+	async function install(mod: Mod, projectType: CurseForgeProjectType, file?: CurseForgeFile) {
+		if (projectType === 'modpack') {
+			await installModpack(mod, file)
+			return
+		}
 		const target = toValue(instance)
 		if (target) {
-			await installInto(target, mod, contentType, file)
+			await installInto(target, mod, projectType, file)
 		} else {
-			await contentInstall.installFromPlatform(platformInstallRequest(mod, contentType))
+			await contentInstall.installFromPlatform(platformInstallRequest(mod, projectType))
 		}
 	}
 

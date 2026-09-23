@@ -34,6 +34,13 @@ pub enum InstanceLink {
         version_number: Option<String>,
         filename: Option<String>,
     },
+    /// A modpack installed from CurseForge.
+    CurseForgeModpack {
+        project_id: String,
+        file_id: String,
+        name: Option<String>,
+        version_number: Option<String>,
+    },
     /// Modpack provenance installed by a shared instance. Remote membership,
     /// manager identity, and synchronization state belong to
     /// [`SharedInstanceAttachment`].

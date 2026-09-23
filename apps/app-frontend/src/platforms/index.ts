@@ -35,7 +35,8 @@ const messages = defineMessages({
 	},
 	curseforgeDescription: {
 		id: 'app.platforms.curseforge.description',
-		defaultMessage: 'Mods, resource packs, data packs and shaders from the CurseForge library.',
+		defaultMessage:
+			'Modpacks, mods, resource packs, data packs and shaders from the CurseForge library.',
 	},
 })
 
@@ -56,8 +57,8 @@ export const CONTENT_PLATFORMS: Record<ContentPlatformId, ContentPlatform> = {
 		name: 'CurseForge',
 		icon: CurseForgeIcon,
 		description: messages.curseforgeDescription,
-		projectTypes: ['mod', 'resourcepack', 'datapack', 'shader'],
-		defaultProjectType: 'mod',
+		projectTypes: ['modpack', 'mod', 'resourcepack', 'datapack', 'shader'],
+		defaultProjectType: 'modpack',
 		projectPathPrefix: '/curseforge/project/',
 		projectRoute: (projectId, query) => ({ path: `/curseforge/project/${projectId}`, query }),
 		userRoute: (userId) => `/curseforge/user/${encodeURIComponent(userId)}`,

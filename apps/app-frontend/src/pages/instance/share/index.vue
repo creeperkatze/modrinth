@@ -276,15 +276,17 @@ const showMembersTable = computed(
 )
 const requiresUnlink = computed(
 	() =>
-		instance.value.link?.type === 'imported_modpack' &&
+		(instance.value.link?.type === 'imported_modpack' ||
+			instance.value.link?.type === 'curseforge_modpack') &&
 		!instance.value.shared_instance &&
 		!importedModpackUnlinked.value,
 )
-const importedModpackBackupTip = computed(() =>
-	instance.value.link?.type === 'imported_modpack'
-		? (instance.value.link.name ?? instance.value.link.filename ?? undefined)
-		: undefined,
-)
+const importedModpackBackupTip = computed(() => {
+	const link = instance.value.link
+	if (link?.type === 'imported_modpack') return link.name ?? link.filename ?? undefined
+	if (link?.type === 'curseforge_modpack') return link.name ?? undefined
+	return undefined
+})
 
 const messages = defineMessages({
 	signInButton: { id: 'app.instance.share.sign-in.button', defaultMessage: 'Sign in' },

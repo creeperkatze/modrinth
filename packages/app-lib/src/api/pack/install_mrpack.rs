@@ -19,6 +19,7 @@ use crate::state::{
 };
 use crate::util::fetch::{
     DownloadMeta, DownloadReason, FetchProgressFn, fetch_content_file,
+    fetch_file_mirrors_in,
 };
 use crate::util::io;
 use async_zip::base::read::seek::ZipFileReader as SeekZipFileReader;
@@ -162,6 +163,22 @@ impl MrpackZipReader {
             Self::Memory(reader) => reader.file(),
             Self::File(reader) => reader.file(),
         }
+    }
+
+    /// Reads the entry at `name`, or returns `None` when the archive has no such entry.
+    async fn read_named_entry(
+        &mut self,
+        name: &str,
+    ) -> crate::Result<Option<String>> {
+        let Some(index) = self
+            .file()
+            .entries()
+            .iter()
+            .position(|entry| entry.filename().as_str().ok() == Some(name))
+        else {
+            return Ok(None);
+        };
+        self.read_entry_to_string(index).await.map(Some)
     }
 
     async fn read_entry_to_string(
@@ -517,6 +534,7 @@ pub(crate) async fn install_zipped_mrpack_files_with_reporter(
     let state = &State::get().await?;
 
     let file = create_pack.file;
+    let resolved_manifest = create_pack.manifest;
     let description = create_pack.description.clone();
     let icon = create_pack.description.icon;
     let project_id = create_pack.description.project_id;
@@ -549,30 +567,31 @@ pub(crate) async fn install_zipped_mrpack_files_with_reporter(
             modpack_details.clone(),
         )
         .await?;
-    reporter
-        .set_context(
-            InstallErrorContext::new("read modpack manifest")
-                .maybe_project_id(project_id.clone())
-                .maybe_version_id(version_id.clone())
-                .source_path(source_path.clone())
-                .entry_path("modrinth.index.json")
-                .build(),
-        )
-        .await?;
-
-    // Extract index of modrinth.index.json
-    let Some(manifest_idx) = zip_reader.file().entries().iter().position(|f| {
-        matches!(f.filename().as_str(), Ok("modrinth.index.json"))
-    }) else {
-        return Err(crate::Error::from(crate::ErrorKind::InputError(
-            "No pack manifest found in mrpack".to_string(),
-        )));
+    let from_other_platform = resolved_manifest.is_some();
+    let pack: PackFormat = match resolved_manifest {
+        Some(manifest) => manifest,
+        None => {
+            reporter
+                .set_context(
+                    InstallErrorContext::new("read modpack manifest")
+                        .maybe_project_id(project_id.clone())
+                        .maybe_version_id(version_id.clone())
+                        .source_path(source_path.clone())
+                        .entry_path("modrinth.index.json")
+                        .build(),
+                )
+                .await?;
+            let manifest = zip_reader
+                .read_named_entry("modrinth.index.json")
+                .await?
+                .ok_or_else(|| {
+                    crate::Error::from(crate::ErrorKind::InputError(
+                        "No pack manifest found in mrpack".to_string(),
+                    ))
+                })?;
+            serde_json::from_str(&manifest)?
+        }
     };
-
-    let mut manifest = String::new();
-    manifest.push_str(&zip_reader.read_entry_to_string(manifest_idx).await?);
-
-    let pack: PackFormat = serde_json::from_str(&manifest)?;
     if &*pack.game != "minecraft" {
         return Err(crate::ErrorKind::InputError(
             "Pack does not support Minecraft".to_string(),
@@ -740,7 +759,9 @@ pub(crate) async fn install_zipped_mrpack_files_with_reporter(
             file.hashes.get(&PackFileHash::Sha1).map(String::as_str)
         })
         .collect::<Vec<_>>();
-    let file_infos_by_hash = Arc::new(
+    let file_infos_by_hash = Arc::new(if from_other_platform {
+        HashMap::new()
+    } else {
         CachedEntry::get_file_many(
             &file_info_hashes,
             None,
@@ -750,8 +771,8 @@ pub(crate) async fn install_zipped_mrpack_files_with_reporter(
         .await?
         .into_iter()
         .map(|file| (file.hash.clone(), file))
-        .collect::<HashMap<_, _>>(),
-    );
+        .collect::<HashMap<_, _>>()
+    });
     let content_context = ModpackContentInstallContext {
         instance_id: instance_id.clone(),
         instance_path: instance_path.clone(),
@@ -878,23 +899,43 @@ pub(crate) async fn install_zipped_mrpack_files_with_reporter(
                 };
                 let progress =
                     &mut report_download_progress as &mut FetchProgressFn<'_>;
-                let file = match fetch_content_file(
-                    state,
-                    &project
-                        .downloads
-                        .iter()
-                        .map(|x| &**x)
-                        .collect::<Vec<&str>>(),
-                    project
-                        .hashes
-                        .get(&PackFileHash::Sha512)
-                        .map(String::as_str),
-                    Some(project_size),
-                    Some(&content_context.download_meta),
-                    Some(progress),
-                )
-                .await
-                {
+                let downloads = project
+                    .downloads
+                    .iter()
+                    .map(|x| &**x)
+                    .collect::<Vec<&str>>();
+                let sha512 = project
+                    .hashes
+                    .get(&PackFileHash::Sha512)
+                    .map(String::as_str);
+                let fetched =
+                    match (sha512, project.hashes.get(&PackFileHash::Sha1)) {
+                        (None, Some(sha1)) => {
+                            fetch_file_mirrors_in(
+                                &downloads,
+                                Some(sha1),
+                                None,
+                                None,
+                                &state.fetch_semaphore,
+                                &state.pool,
+                                Some(progress),
+                                None,
+                            )
+                            .await
+                        }
+                        _ => {
+                            fetch_content_file(
+                                state,
+                                &downloads,
+                                sha512,
+                                Some(project_size),
+                                Some(&content_context.download_meta),
+                                Some(progress),
+                            )
+                            .await
+                        }
+                    };
+                let file = match fetched {
                     Ok(file) => {
                         content_context
                             .remove_active_download(&project_path)
@@ -1263,6 +1304,17 @@ pub(crate) async fn install_zipped_mrpack_files_with_reporter(
     reporter.clear_context().await?;
 
     Ok::<String, crate::Error>(instance_id.clone())
+}
+
+/// Reads a text entry of a pack archive, or returns `None` when the archive has no such entry.
+pub(crate) async fn read_pack_entry(
+    file: &CreatePackFile,
+    name: &str,
+) -> crate::Result<Option<String>> {
+    MrpackZipReader::new(file)
+        .await?
+        .read_named_entry(name)
+        .await
 }
 
 fn pack_source_path(file: &CreatePackFile) -> String {

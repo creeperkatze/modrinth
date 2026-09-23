@@ -172,6 +172,7 @@ pub async fn import_atlauncher(
         version_id: None,
         instance_id: instance_id.to_string(),
         source_filename: None,
+        link: None,
     };
 
     let backup_name = format!("ATLauncher-{instance_folder}");

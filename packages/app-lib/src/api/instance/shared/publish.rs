@@ -1075,7 +1075,11 @@ pub(super) fn shared_modpack_id(link: &InstanceLink) -> Option<String> {
 }
 
 pub(super) fn ensure_shareable_link(link: &InstanceLink) -> crate::Result<()> {
-    if matches!(link, InstanceLink::ImportedModpack { .. }) {
+    if matches!(
+        link,
+        InstanceLink::ImportedModpack { .. }
+            | InstanceLink::CurseForgeModpack { .. }
+    ) {
         return Err(crate::ErrorKind::InputError(
             "You must unlink this modpack to share your instance".to_string(),
         )

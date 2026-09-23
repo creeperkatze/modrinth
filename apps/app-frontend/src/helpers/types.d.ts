@@ -112,6 +112,13 @@ export type InstanceLink = InstanceLinkIdentity &
 				filename?: string | null
 		  }
 		| {
+				type: 'curseforge_modpack'
+				curseforge_project_id: string
+				curseforge_file_id: string
+				name?: string | null
+				version_number?: string | null
+		  }
+		| {
 				type: 'modrinth_hosting'
 				server_id: string
 				instance_ids: string[]

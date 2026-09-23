@@ -22,7 +22,7 @@ use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 
-#[derive(Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Eq, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PackFormat {
     pub game: String,
@@ -34,7 +34,7 @@ pub struct PackFormat {
     pub dependencies: HashMap<PackDependency, String>,
 }
 
-#[derive(Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Eq, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PackFile {
     pub path: SafeRelativeUtf8UnixPathBuf,
@@ -44,7 +44,7 @@ pub struct PackFile {
     pub file_size: u32,
 }
 
-#[derive(Serialize, Deserialize, Eq, PartialEq, Hash)]
+#[derive(Serialize, Deserialize, Eq, PartialEq, Hash, Clone)]
 #[serde(rename_all = "camelCase", from = "String")]
 pub enum PackFileHash {
     Sha1,
@@ -62,7 +62,7 @@ impl From<String> for PackFileHash {
     }
 }
 
-#[derive(Serialize, Deserialize, Eq, PartialEq, Hash)]
+#[derive(Serialize, Deserialize, Eq, PartialEq, Hash, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 pub enum EnvType {
     Client,
@@ -101,6 +101,13 @@ pub enum CreatePackLocation {
     // Create a pack from a file (such as an .mrpack for installing from a file, or a folder name for importing)
     FromFile {
         path: PathBuf,
+    },
+    /// Create a pack from a CurseForge modpack file.
+    FromCurseForge {
+        project_id: String,
+        file_id: String,
+        title: String,
+        icon_url: Option<String>,
     },
 }
 
@@ -151,6 +158,9 @@ pub enum CreatePackFile {
 pub struct CreatePack {
     pub file: CreatePackFile,
     pub description: CreatePackDescription,
+    /// The pack's manifest when it was resolved ahead of time. Without one, the manifest is read
+    /// from the archive's `modrinth.index.json`.
+    pub manifest: Option<PackFormat>,
 }
 
 const MAX_LOCAL_FILE_HASH_LOOKUP_SIZE: u64 = 1024 * 1024 * 1024;
@@ -174,6 +184,8 @@ pub struct CreatePackDescription {
     pub version_id: Option<String>,
     pub instance_id: String,
     pub source_filename: Option<String>,
+    /// The link to give the instance, instead of one derived from the fields above.
+    pub link: Option<InstanceLink>,
 }
 
 pub async fn get_instance_from_pack(
@@ -191,6 +203,22 @@ pub async fn get_instance_from_pack(
             link: Some(InstanceLink::ModrinthModpack {
                 project_id,
                 version_id,
+            }),
+            ..Default::default()
+        }),
+        CreatePackLocation::FromCurseForge {
+            project_id,
+            file_id,
+            title,
+            icon_url,
+        } => Ok(CreatePackInstance {
+            name: title.clone(),
+            icon_url,
+            link: Some(InstanceLink::CurseForgeModpack {
+                project_id,
+                file_id,
+                name: Some(title),
+                version_number: None,
             }),
             ..Default::default()
         }),
@@ -490,7 +518,9 @@ pub(crate) async fn generate_pack_from_version_id_with_reporter(
             version_id: Some(version_id),
             instance_id,
             source_filename: None,
+            link: None,
         },
+        manifest: None,
     })
 }
 
@@ -519,7 +549,9 @@ pub async fn generate_pack_from_file(
             version_id: None,
             instance_id,
             source_filename,
+            link: None,
         },
+        manifest: None,
     })
 }
 
@@ -578,6 +610,7 @@ pub async fn set_instance_information(
         None
     };
     let pack_link = match (&description.project_id, &description.version_id) {
+        _ if description.link.is_some() => description.link.clone(),
         (Some(project_id), Some(version_id)) => {
             Some(InstanceLink::ModrinthModpack {
                 project_id: project_id.clone(),
@@ -618,9 +651,10 @@ pub async fn set_instance_information(
         Some(InstanceLink::ModrinthHosting { .. }) => {
             Some(ContentSourceKind::ModrinthHosting)
         }
-        Some(InstanceLink::ImportedModpack { .. }) => {
-            Some(ContentSourceKind::ImportedModpack)
-        }
+        Some(
+            InstanceLink::ImportedModpack { .. }
+            | InstanceLink::CurseForgeModpack { .. },
+        ) => Some(ContentSourceKind::ImportedModpack),
         Some(InstanceLink::SharedInstance { .. }) => {
             Some(ContentSourceKind::SharedInstance)
         }

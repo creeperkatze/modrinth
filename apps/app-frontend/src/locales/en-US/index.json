@@ -1560,7 +1560,7 @@
     "message": "Warning"
   },
   "app.platforms.curseforge.description": {
-    "message": "Mods, resource packs, data packs and shaders from the CurseForge library."
+    "message": "Modpacks, mods, resource packs, data packs and shaders from the CurseForge library."
   },
   "app.platforms.modrinth.description": {
     "message": "Open source mods, modpacks, resource packs, data packs, shaders and servers."

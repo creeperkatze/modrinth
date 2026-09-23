@@ -33,6 +33,7 @@ import {
 } from '@/helpers/instance'
 import { get_loader_versions } from '@/helpers/metadata'
 import { get_game_versions, get_loaders } from '@/helpers/tags'
+import { CONTENT_PLATFORMS } from '@/platforms'
 import { injectAppEvents } from '@/providers/app-events'
 import { provideInstanceBackup } from '@/providers/instance-backup'
 
@@ -119,6 +120,7 @@ const isModrinthLinkedModpack = computed(
 			!!instance.value.link.modpack_version_id),
 )
 const isImportedModpack = computed(() => instance.value.link?.type === 'imported_modpack')
+const isCurseForgeModpack = computed(() => instance.value.link?.type === 'curseforge_modpack')
 const isSharedInstanceManagedModpack = managedContentPolicy.isManagedModpack
 const canUnlinkSharedInstance = managedContentPolicy.canUnlink
 
@@ -188,6 +190,23 @@ function getManifest(loader: string) {
 	return manifest
 }
 
+/** Reinstalls the CurseForge file the instance was installed from. */
+async function reinstallCurseForgeModpack() {
+	const link = instance.value.link
+	if (link?.type !== 'curseforge_modpack') return false
+
+	const job = await install_pack_to_existing_instance(instance.value.id, {
+		type: 'fromCurseForge',
+		project_id: link.curseforge_project_id,
+		file_id: link.curseforge_file_id,
+		title: link.name ?? instance.value.name,
+	}).catch(handleError)
+	if (!job) return false
+
+	const completed = await wait_for_install_job(appEvents, job.job_id).catch(handleError)
+	return !!completed
+}
+
 async function installLocalModpackFromPicker() {
 	const picked = await filePicker.pickModpackFile({ readFile: false })
 	if (!picked?.path) return false
@@ -232,6 +251,7 @@ provideInstallationSettings({
 		() =>
 			isModrinthLinkedModpack.value ||
 			isImportedModpack.value ||
+			isCurseForgeModpack.value ||
 			instance.value.link?.type === 'server_project' ||
 			isSharedInstanceManagedModpack.value,
 	),
@@ -239,6 +259,14 @@ provideInstallationSettings({
 	busyMessage: installationSettingsBusyMessage,
 	skipNonEssentialWarnings,
 	modpack: computed(() => {
+		if (instance.value.link?.type === 'curseforge_modpack') {
+			return {
+				iconUrl: instance.value.icon_path,
+				title: instance.value.link.name ?? instance.value.name,
+				link: `${CONTENT_PLATFORMS.curseforge.projectPathPrefix}${instance.value.link.curseforge_project_id}`,
+				versionNumber: instance.value.link.version_number ?? undefined,
+			}
+		}
 		if (isImportedModpack.value && instance.value.link?.type === 'imported_modpack') {
 			return {
 				iconUrl: instance.value.icon_path,
@@ -385,7 +413,9 @@ provideInstallationSettings({
 		reinstalling.value = true
 		let shouldTrack = false
 		try {
-			if (isImportedModpack.value) {
+			if (isCurseForgeModpack.value) {
+				shouldTrack = await reinstallCurseForgeModpack()
+			} else if (isImportedModpack.value) {
 				shouldTrack = await installLocalModpackFromPicker()
 			} else {
 				await update_repair_modrinth(instance.value.id).catch(handleError)

@@ -206,6 +206,13 @@ pub enum InstanceLink {
         instance_ids: Vec<String>,
         active_instance_id: Option<String>,
     },
+    /// Uses platform-prefixed ids because the frontend reads `project_id` as a Modrinth id.
+    CurseforgeModpack {
+        curseforge_project_id: String,
+        curseforge_file_id: String,
+        name: Option<String>,
+        version_number: Option<String>,
+    },
     SharedInstance {
         modpack_project_id: Option<String>,
         modpack_version_id: Option<String>,
@@ -396,6 +403,17 @@ impl InstanceLink {
                     .collect(),
                 active_instance_id: active_instance_id.map(|id| id.to_string()),
             }),
+            CoreInstanceLink::CurseForgeModpack {
+                project_id,
+                file_id,
+                name,
+                version_number,
+            } => Some(Self::CurseforgeModpack {
+                curseforge_project_id: project_id,
+                curseforge_file_id: file_id,
+                name,
+                version_number,
+            }),
             CoreInstanceLink::SharedInstance {
                 modpack_project_id,
                 modpack_version_id,
@@ -440,6 +458,17 @@ impl InstanceLink {
                 name,
                 version_number,
                 filename,
+            }),
+            Self::CurseforgeModpack {
+                curseforge_project_id,
+                curseforge_file_id,
+                name,
+                version_number,
+            } => Ok(CoreInstanceLink::CurseForgeModpack {
+                project_id: curseforge_project_id,
+                file_id: curseforge_file_id,
+                name,
+                version_number,
             }),
             Self::ModrinthHosting {
                 server_id,

@@ -21,10 +21,15 @@ import type { ContentFileProjectType, InstanceLoader } from './types'
 
 export const MINECRAFT_GAME_ID = 432
 
+/** Content types that install into an instance. */
 export type CurseForgeContentType = 'mod' | 'resourcepack' | 'shader' | 'datapack'
 
-/** CurseForge "class" ids for each supported content type. */
-export const CURSEFORGE_CLASS_IDS: Record<CurseForgeContentType, number> = {
+/** Every project type Refract supports from CurseForge. Modpacks install as new instances. */
+export type CurseForgeProjectType = 'modpack' | CurseForgeContentType
+
+/** CurseForge "class" ids for each supported project type. */
+export const CURSEFORGE_CLASS_IDS: Record<CurseForgeProjectType, number> = {
+	modpack: 4471,
 	mod: 6,
 	resourcepack: 12,
 	shader: 6552,
@@ -53,13 +58,17 @@ export const LOADER_TAGS: Partial<Record<ModLoaderType, string>> = {
 	[ModLoaderType.Quilt]: 'quilt',
 }
 
-export function isCurseForgeContentType(type: string): type is CurseForgeContentType {
+export function isCurseForgeProjectType(type: string): type is CurseForgeProjectType {
 	return type in CURSEFORGE_CLASS_IDS
 }
 
-export function contentTypeFromClassId(classId: number | null): CurseForgeContentType | null {
+export function isCurseForgeContentType(type: string): type is CurseForgeContentType {
+	return type in INSTALL_PROJECT_TYPES
+}
+
+export function projectTypeFromClassId(classId: number | null): CurseForgeProjectType | null {
 	const entry = Object.entries(CURSEFORGE_CLASS_IDS).find(([, id]) => id === classId)
-	return entry ? (entry[0] as CurseForgeContentType) : null
+	return entry ? (entry[0] as CurseForgeProjectType) : null
 }
 
 export function hasCurseForgeApiKey(): boolean {
@@ -102,7 +111,7 @@ export function getCurseForgeClient(): Promise<CurseForgeClient> {
 
 /** Mod loaders to filter by for an instance, or none when the content type doesn't depend on a loader. */
 export function getLoaderTypes(
-	contentType: CurseForgeContentType,
+	contentType: CurseForgeProjectType,
 	loader: InstanceLoader,
 ): ModLoaderType[] {
 	return contentType === 'mod' ? (LOADER_TYPES[loader] ?? []) : []
