@@ -2,14 +2,16 @@ use crate::state::State;
 use crate::state::content_store::{input, validate_digest};
 use crate::state::instances::adapters::sqlite::external_source_rows;
 use crate::state::instances::{ContentSourceKind, InstallExternalFileRequest};
-use crate::util::fetch;
+use crate::util::fetch::{self, FetchProgressFn};
 
 use super::content_mutation::{InstallContent, install_stored_file};
 
-/// Downloads a file from an external platform, records its source, and installs it into the instance.
+/// Downloads a file from an external platform, records its source, and installs it into the
+/// instance, replacing `request.replace_path` when set.
 pub(crate) async fn install_external_file(
     instance_id: &str,
     request: &InstallExternalFileRequest,
+    progress: Option<&mut FetchProgressFn<'_>>,
     state: &State,
 ) -> crate::Result<String> {
     if !path_util::is_safe_file_name(&request.file_name) {
@@ -37,7 +39,7 @@ pub(crate) async fn install_external_file(
         None,
         &state.fetch_semaphore,
         &state.pool,
-        None,
+        progress,
         None,
     )
     .await?;
@@ -62,7 +64,7 @@ pub(crate) async fn install_external_file(
             source_kind: ContentSourceKind::Local,
             origin: None,
             enabled_override: None,
-            previous_path: None,
+            previous_path: request.replace_path.as_deref(),
         },
         state,
     )

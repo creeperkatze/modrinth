@@ -4,7 +4,11 @@
  *  and deserialized into a usable JS object.
  */
 import type { Labrinth } from '@modrinth/api-client'
-import type { ContentItem, ContentOwner, ExternalContentSource } from '@modrinth/ui'
+import type {
+	ContentItem,
+	ContentOwner,
+	ExternalPlatform,
+} from '@modrinth/ui'
 import { convertFileSrc, invoke } from '@tauri-apps/api/core'
 
 import type { InstallJobSnapshot, SharedInstanceUpdateDiff } from './install'
@@ -71,6 +75,17 @@ export async function get_install_candidates(
 		projectId,
 		projectType,
 		targets,
+	})
+}
+
+// Get the ids of instances containing a file from a project on an external platform
+export async function get_external_project_instances(
+	platform: ExternalPlatform,
+	projectId: string,
+): Promise<string[]> {
+	return await invoke('plugin:instance|instance_get_external_project_instances', {
+		platform,
+		projectId,
 	})
 }
 
@@ -505,26 +520,6 @@ export async function add_project_from_path(
 		instanceId,
 		projectPath,
 		projectType,
-	})
-}
-
-export type InstallExternalFileRequest = {
-	url: string
-	file_name: string
-	sha1: string
-	project_type: ContentFileProjectType
-	source: ExternalContentSource
-}
-
-// Download a file from an external platform (e.g. CurseForge) and add it to an instance
-// Returns a path to the new project file
-export async function install_external_file(
-	instanceId: string,
-	request: InstallExternalFileRequest,
-): Promise<string> {
-	return await invoke('plugin:instance|instance_install_external_file', {
-		instanceId,
-		request,
 	})
 }
 

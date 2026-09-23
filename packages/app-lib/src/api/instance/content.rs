@@ -1,7 +1,8 @@
+use crate::state::instances::adapters::sqlite::external_source_rows;
 use crate::state::{
     CacheBehaviour, ContentFile, ContentItem, ContentSet, Dependency,
-    InstanceInstallCandidate, InstanceInstallTarget, LinkedModpackInfo,
-    ProjectType, State,
+    ExternalPlatform, InstanceInstallCandidate, InstanceInstallTarget,
+    LinkedModpackInfo, ProjectType, State,
 };
 use dashmap::DashMap;
 
@@ -11,6 +12,21 @@ pub async fn sync_content_files(
 ) -> crate::Result<Vec<crate::state::instances::InstanceFile>> {
     let state = State::get().await?;
     crate::state::sync_content_files(instance_id, &state).await
+}
+
+/// Returns the ids of instances that contain a file from `project_id` on `platform`.
+#[tracing::instrument]
+pub async fn get_external_project_instances(
+    platform: ExternalPlatform,
+    project_id: &str,
+) -> crate::Result<Vec<String>> {
+    let state = State::get().await?;
+    external_source_rows::get_instances_with_external_project(
+        platform,
+        project_id,
+        &state.pool,
+    )
+    .await
 }
 
 #[tracing::instrument]

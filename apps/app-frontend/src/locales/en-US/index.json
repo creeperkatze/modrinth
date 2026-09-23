@@ -254,15 +254,6 @@
   "app.browse.curseforge.search-placeholder": {
     "message": "Search {projectType} on CurseForge..."
   },
-  "app.browse.curseforge.select-instance.body": {
-    "message": "CurseForge content is installed into a specific instance. Pick one to filter results by its Minecraft version and loader."
-  },
-  "app.browse.curseforge.select-instance.placeholder": {
-    "message": "Select instance"
-  },
-  "app.browse.curseforge.select-instance.title": {
-    "message": "Select an instance to install to"
-  },
   "app.browse.curseforge.sort.downloads": {
     "message": "Downloads"
   },
@@ -362,12 +353,6 @@
   "app.curseforge.files.switch": {
     "message": "Switch"
   },
-  "app.curseforge.install-success.dependencies": {
-    "message": "Also installed {count, plural, one {# dependency} other {# dependencies}}: {names}"
-  },
-  "app.curseforge.install-success.title": {
-    "message": "Installed {name}"
-  },
   "app.curseforge.no-compatible-file.body": {
     "message": "{name} has no files for Minecraft {gameVersion} with this loader."
   },
@@ -397,9 +382,6 @@
   },
   "app.curseforge.project.download-on-curseforge.tooltip": {
     "message": "This project's author doesn't allow downloads from other apps"
-  },
-  "app.curseforge.project.install-to": {
-    "message": "Install to instance..."
   },
   "app.curseforge.project.links.issues": {
     "message": "Issues"
@@ -443,6 +425,9 @@
   "app.curseforge.restricted.title": {
     "message": "Some files must be downloaded manually"
   },
+  "app.discover.back-to-instance": {
+    "message": "Back to instance"
+  },
   "app.discover.browse-platform": {
     "message": "Browse {platform}"
   },
@@ -451,6 +436,9 @@
   },
   "app.download-manager.active": {
     "message": "Active"
+  },
+  "app.download-manager.added-to-instance": {
+    "message": "Added to {instance}"
   },
   "app.download-manager.attention": {
     "message": "Needs attention"
@@ -469,6 +457,9 @@
   },
   "app.download-manager.complete": {
     "message": "Complete"
+  },
+  "app.download-manager.content-installation": {
+    "message": "Content installation"
   },
   "app.download-manager.duplicated-instance": {
     "message": "Duplicated instance"

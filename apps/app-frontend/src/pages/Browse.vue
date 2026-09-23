@@ -53,12 +53,13 @@ import { get_loader_versions as getLoaderManifest } from '@/helpers/metadata'
 import { get as getSettings, set as setSettings } from '@/helpers/settings.ts'
 import { get_categories, get_game_versions, get_loaders } from '@/helpers/tags'
 import { get_instance_worlds } from '@/helpers/worlds'
+import { instanceBreadcrumb } from '@/pages/instance/breadcrumbs'
 import {
 	instanceDetailQueryOptions,
 	instanceKeys,
 	instanceLinkedProjectQueryOptions,
 } from '@/pages/instance/query-options'
-import { PLATFORM_QUERY_PARAM, platformFromQuery } from '@/platforms'
+import { instanceDiscoverRoute, PLATFORM_QUERY_PARAM, platformFromQuery } from '@/platforms'
 import { platformBreadcrumbDefinition } from '@/platforms/breadcrumbs'
 import {
 	type BreadcrumbDefinition,
@@ -191,25 +192,15 @@ const isServerInstance = computed(
 )
 
 const breadcrumbManager = injectBreadcrumbManager()
-const instanceBreadcrumbDefinition = {
-	slot: 'instance',
-	id: () => `instance:${String(displayedBrowseRoute.value.query.i ?? '')}`,
-	label: () => instance.value?.name ?? formatMessage(commonMessages.loadingLabel),
-	visual: () => ({
-		type: 'image' as const,
-		src: getInstanceIconUrl(instance.value?.icon_path),
-		alt: instance.value?.name,
-		tintBy: String(displayedBrowseRoute.value.query.i ?? ''),
-	}),
-	to: () => {
-		const instancePath = `/instance/${encodeURIComponent(
-			String(displayedBrowseRoute.value.query.i ?? ''),
-		)}`
-		return displayedBrowseRoute.value.query.from === 'worlds'
-			? `${instancePath}/worlds`
-			: instancePath
-	},
-} satisfies BreadcrumbDefinition
+const instanceBreadcrumbDefinition = instanceBreadcrumb({
+	instanceId: () => String(displayedBrowseRoute.value.query.i ?? ''),
+	instance,
+	loadingLabel: () => formatMessage(commonMessages.loadingLabel),
+	to: () =>
+		displayedBrowseRoute.value.query.from === 'worlds'
+			? `/instance/${encodeURIComponent(String(displayedBrowseRoute.value.query.i ?? ''))}/worlds`
+			: undefined,
+})
 const serversBreadcrumbDefinition = {
 	slot: 'root',
 	id: 'servers',
@@ -249,7 +240,9 @@ const discoverBreadcrumbDefinition = {
 	label: () => formatMessage(commonMessages.discoverContentLabel),
 	to: () => {
 		const instanceId = displayedBrowseRoute.value.query.i
-		return { path: '/discover', query: typeof instanceId === 'string' ? { i: instanceId } : {} }
+		return typeof instanceId === 'string'
+			? instanceDiscoverRoute(instanceId, String(displayedBrowseRoute.value.params.projectType))
+			: { path: '/discover' }
 	},
 	visual: { type: 'icon', component: CompassIcon },
 } satisfies BreadcrumbDefinition
@@ -277,8 +270,8 @@ function syncBreadcrumbs() {
 	}
 
 	if (query.from === 'worlds') {
-		const instanceBreadcrumb = breadcrumbManager.reset(instanceBreadcrumbDefinition)
-		breadcrumbManager.push(breadcrumbDefinition, { parent: instanceBreadcrumb })
+		const instanceHandle = breadcrumbManager.reset(instanceBreadcrumbDefinition)
+		breadcrumbManager.push(breadcrumbDefinition, { parent: instanceHandle })
 		return
 	}
 

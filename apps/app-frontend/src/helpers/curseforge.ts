@@ -12,7 +12,8 @@ import CurseForgeClient, {
 
 import { config } from '@/config'
 
-import { get_content_items, install_external_file, remove_project } from './instance'
+import type { InstallExternalFileRequest } from './install'
+import { get_content_items } from './instance'
 import type { ContentFileProjectType, InstanceLoader } from './types'
 
 export const MINECRAFT_GAME_ID = 432
@@ -207,8 +208,9 @@ export type CurseForgeInstallTarget = {
 	installedProjectIds: Set<string>
 }
 
-export type CurseForgeInstallResult = {
-	installed: Mod[]
+export type CurseForgeInstallPlan = {
+	/** Files to download, dependencies first. */
+	files: InstallExternalFileRequest[]
 	/** Projects whose authors don't allow downloads from third-party apps, to be downloaded manually. */
 	restricted: Mod[]
 }
@@ -222,23 +224,23 @@ export class NoCompatibleFileError extends Error {
 export type CurseForgeInstallOptions = {
 	/** A specific file of the project to install instead of the newest compatible one. */
 	file?: CurseForgeFile
-	/** An installed file of the same project to remove once the new file is installed. */
+	/** An installed file of the same project that the new file replaces. */
 	replacePath?: string
 }
 
-/** Installs a CurseForge project into an instance along with its required dependencies. */
-export async function installCurseForgeProject(
+/** Resolves the files needed to install a CurseForge project and its required dependencies. */
+export async function resolveCurseForgeInstall(
 	mod: Mod,
 	contentType: CurseForgeContentType,
 	target: CurseForgeInstallTarget,
 	options: CurseForgeInstallOptions = {},
-): Promise<CurseForgeInstallResult> {
+): Promise<CurseForgeInstallPlan> {
 	const client = await getCurseForgeClient()
 	const loaderTypes = getLoaderTypes(contentType, target.loader)
-	const result: CurseForgeInstallResult = { installed: [], restricted: [] }
+	const plan: CurseForgeInstallPlan = { files: [], restricted: [] }
 	const visited = new Set(target.installedProjectIds)
 
-	async function install(project: Mod, isDependency: boolean) {
+	async function resolve(project: Mod, isDependency: boolean) {
 		if (isDependency && visited.has(String(project.id))) return
 		visited.add(String(project.id))
 
@@ -258,31 +260,27 @@ export async function installCurseForgeProject(
 		if (requiredIds.length > 0) {
 			const dependencies = await client.mods.getMods({ modIds: requiredIds })
 			for (const dependency of dependencies) {
-				await install(dependency, true)
+				await resolve(dependency, true)
 			}
 		}
 
 		const sha1 = getSha1(file)
 		if (!file.downloadUrl || !sha1 || project.allowModDistribution === false) {
-			result.restricted.push(project)
+			plan.restricted.push(project)
 			return
 		}
 
-		const path = await install_external_file(target.instanceId, {
+		plan.files.push({
 			url: file.downloadUrl,
 			file_name: file.fileName,
 			sha1,
+			size: file.fileLength,
 			project_type: INSTALL_PROJECT_TYPES[contentType],
 			source: toExternalSource(project, file),
+			replace_path: isDependency ? null : (options.replacePath ?? null),
 		})
-		if (!isDependency) root.path = path
-		result.installed.push(project)
 	}
 
-	const root: { path: string | null } = { path: null }
-	await install(mod, false)
-	if (options.replacePath && root.path && root.path !== options.replacePath) {
-		await remove_project(target.instanceId, options.replacePath)
-	}
-	return result
+	await resolve(mod, false)
+	return plan
 }

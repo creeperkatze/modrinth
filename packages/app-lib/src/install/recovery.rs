@@ -613,6 +613,12 @@ fn display_from_request(state: &InstallJobState) -> Option<InstallJobDisplay> {
                 icon: rollback.instance.instance.icon_path.clone(),
             })
         }
+        InstallRequest::InstallContent {
+            title, icon_url, ..
+        } => Some(InstallJobDisplay {
+            title: title.clone(),
+            icon: icon_url.clone(),
+        }),
     }
 }
 

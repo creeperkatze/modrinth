@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CheckIcon, DownloadIcon, ExternalIcon, PlusIcon, SearchIcon, SpinnerIcon } from '@modrinth/assets'
+import { CheckIcon, ExternalIcon, PlusIcon, SearchIcon, SpinnerIcon } from '@modrinth/assets'
 import {
 	Admonition,
 	Button,
@@ -21,7 +21,7 @@ import { openUrl } from '@tauri-apps/plugin-opener'
 import { refDebounced } from '@vueuse/core'
 import { type Mod, ModsSearchSortField, type SortOrder } from 'curseforge-js'
 import { computed, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 
 import { useCurseForgeInstall } from '@/composables/curseforge/use-curseforge-install'
 import {
@@ -33,7 +33,6 @@ import {
 	isCurseForgeContentType,
 	MINECRAFT_GAME_ID,
 } from '@/helpers/curseforge'
-import { list as listInstances } from '@/helpers/instance'
 import type { GameInstance } from '@/helpers/types'
 import { CONTENT_PLATFORMS } from '@/platforms'
 
@@ -59,7 +58,6 @@ const props = defineProps<{
 const { formatMessage } = useVIntl()
 const queryClient = useQueryClient()
 const route = useRoute()
-const router = useRouter()
 
 const PAGE_SIZE = 20
 /** CurseForge rejects searches where `index + pageSize` exceeds this. */
@@ -82,19 +80,6 @@ const messages = defineMessages({
 	unsupportedTypeBody: {
 		id: 'app.browse.curseforge.unsupported-type.body',
 		defaultMessage: 'Switch to Modrinth or pick another content type.',
-	},
-	selectInstanceTitle: {
-		id: 'app.browse.curseforge.select-instance.title',
-		defaultMessage: 'Select an instance to install to',
-	},
-	selectInstanceBody: {
-		id: 'app.browse.curseforge.select-instance.body',
-		defaultMessage:
-			'CurseForge content is installed into a specific instance. Pick one to filter results by its Minecraft version and loader.',
-	},
-	selectInstancePlaceholder: {
-		id: 'app.browse.curseforge.select-instance.placeholder',
-		defaultMessage: 'Select instance',
 	},
 	searchPlaceholder: {
 		id: 'app.browse.curseforge.search-placeholder',
@@ -269,22 +254,6 @@ const pageCount = computed(() => {
 	return Math.max(1, Math.ceil(total / PAGE_SIZE))
 })
 
-const instancesQuery = useQuery({
-	queryKey: ['curseforge', 'instances'],
-	queryFn: listInstances,
-	enabled: computed(() => !props.instance),
-})
-const instanceOptions = computed<ComboboxOption<string>[]>(() =>
-	(instancesQuery.data.value ?? []).map((instance) => ({
-		value: instance.id,
-		label: `${instance.name} (${instance.loader} ${instance.game_version})`,
-	})),
-)
-
-function selectInstance(instanceId: string) {
-	void router.replace({ query: { ...route.query, i: instanceId } })
-}
-
 const { installedFile, installing, install: installProject } = useCurseForgeInstall(
 	() => props.instance,
 )
@@ -347,23 +316,6 @@ function openOnCurseForge(mod: Mod) {
 		{{ formatMessage(messages.unsupportedTypeBody) }}
 	</Admonition>
 	<template v-else>
-		<Admonition
-			v-if="!instance"
-			type="info"
-			:header="formatMessage(messages.selectInstanceTitle)"
-		>
-			<div class="flex flex-col gap-3">
-				<span>{{ formatMessage(messages.selectInstanceBody) }}</span>
-				<Combobox
-					:options="instanceOptions"
-					:placeholder="formatMessage(messages.selectInstancePlaceholder)"
-					searchable
-					class="!w-[20rem] max-w-full"
-					@update:model-value="(value: string) => selectInstance(value)"
-				/>
-			</div>
-		</Admonition>
-
 		<Input
 			v-model="query"
 			:icon="SearchIcon"
@@ -446,7 +398,7 @@ function openOnCurseForge(mod: Mod) {
 							{{ formatMessage(messages.downloadOnCurseForge) }}
 						</Button>
 						<Button
-							v-else-if="instance"
+							v-else
 							type="outlined"
 							class="!text-brand [&>svg]:!text-brand !shadow-[inset_0_0_0_1px_var(--color-brand)]"
 							:disabled="isInstalled(mod) || installing.has(mod.id)"
@@ -464,10 +416,6 @@ function openOnCurseForge(mod: Mod) {
 											: commonMessages.installButton,
 								)
 							}}
-						</Button>
-						<Button v-else type="outlined" disabled>
-							<DownloadIcon />
-							{{ formatMessage(commonMessages.installButton) }}
 						</Button>
 					</template>
 				</ProjectCard>

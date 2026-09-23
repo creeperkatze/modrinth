@@ -27,6 +27,11 @@ const packStages: readonly Stage[] = [
 	['finalizing', 1],
 ]
 
+const contentStages: readonly Stage[] = [
+	['preparing_instance', 2],
+	['downloading_content', 98],
+]
+
 const copyStages: readonly Stage[] = [
 	['preparing_instance', 35],
 	['resolving_minecraft', 2],
@@ -46,6 +51,7 @@ const stagesByKind: Record<InstallJobSnapshot['kind'], readonly Stage[]> = {
 	install_existing_instance: instanceStages,
 	install_pack_to_existing_instance: packStages,
 	update_shared_instance: packStages,
+	install_content: contentStages,
 }
 
 /** Estimates whole-job progress from stage counters, preserving progress within an attempt. */

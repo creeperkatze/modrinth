@@ -124,10 +124,24 @@ function sortLoaders(loaders: string[]): string[] {
 	})
 }
 
-type InstallTargetInstance = Pick<
+export type InstallTargetInstance = Pick<
 	GameInstance,
 	'id' | 'name' | 'icon_path' | 'game_version' | 'loader'
 >
+
+/** A project from any platform, installed through the shared install modal. */
+export interface PlatformInstallRequest {
+	project: ContentInstallProjectInfo
+	/** Instance loaders the project can be installed on. */
+	loaders: string[]
+	/** Minecraft versions the project supports. */
+	gameVersions: string[]
+	isCompatible: (instance: InstallTargetInstance) => boolean
+	/** Ids of instances that already contain the project. */
+	getInstalledInstanceIds: () => Promise<string[]>
+	/** Installs the project into the instance, resolving to whether it was installed. */
+	install: (instance: InstallTargetInstance) => Promise<boolean>
+}
 
 export interface ContentInstallContext {
 	instances: Ref<ContentInstallInstance[]>
@@ -165,6 +179,8 @@ export interface ContentInstallContext {
 	incompatibilityWarningInstalling: Ref<boolean>
 	handleIncompatibilityWarningInstall: (version: Labrinth.Versions.v2.Version) => Promise<void>
 	handleIncompatibilityWarningCancel: () => void
+	/** Opens the install modal for a project from any platform. */
+	installFromPlatform: (request: PlatformInstallRequest) => Promise<void>
 	install: (
 		projectId: string,
 		versionId?: string | null,
@@ -414,6 +430,7 @@ export function createContentInstall(opts: {
 	let incompatibilityWarningProject: Labrinth.Projects.v2.Project | null = null
 	let incompatibilityWarningCallback: ContentInstallCallback = () => {}
 	let incompatibilityWarningInstalled = false
+	let platformRequest: PlatformInstallRequest | null = null
 
 	let pendingModpackInstall: {
 		project: Labrinth.Projects.v2.Project
@@ -422,6 +439,26 @@ export function createContentInstall(opts: {
 		callback: ContentInstallCallback
 		createInstanceCallback: (instanceId: string) => void
 	} | null = null
+
+	/** Orders the modal's game versions and marks which are releases, using the version manifest. */
+	function loadGameVersionMetadata(gameVersionSet: Set<string>) {
+		return get_game_versions()
+			.then((allGameVersions) => {
+				const releases = new Set<string>()
+				const ordered: string[] = []
+				for (const gv of allGameVersions) {
+					if (gameVersionSet.has(gv.version)) {
+						ordered.push(gv.version)
+						if (gv.version_type === 'release') {
+							releases.add(gv.version)
+						}
+					}
+				}
+				gameVersions.value = ordered
+				releaseGameVersions.value = releases
+			})
+			.catch(() => {})
+	}
 
 	async function showModInstallModal(
 		project: Labrinth.Projects.v2.Project,
@@ -434,6 +471,7 @@ export function createContentInstall(opts: {
 			showModal?: boolean
 		},
 	) {
+		platformRequest = null
 		currentProject = project
 		currentVersions = versions
 		currentCallback = onInstall
@@ -523,22 +561,7 @@ export function createContentInstall(opts: {
 			trackEvent('ProjectInstallStart', { source: 'ProjectInstallModal' })
 		}
 
-		const gameVersionMetadataPromise = get_game_versions()
-			.then((allGameVersions) => {
-				const releases = new Set<string>()
-				const ordered: string[] = []
-				for (const gv of allGameVersions) {
-					if (gameVersionSet.has(gv.version)) {
-						ordered.push(gv.version)
-						if (gv.version_type === 'release') {
-							releases.add(gv.version)
-						}
-					}
-				}
-				gameVersions.value = ordered
-				releaseGameVersions.value = releases
-			})
-			.catch(() => {})
+		const gameVersionMetadataPromise = loadGameVersionMetadata(gameVersionSet)
 
 		try {
 			const candidates = await get_install_candidates(
@@ -608,7 +631,113 @@ export function createContentInstall(opts: {
 		return targets
 	}
 
+	async function installFromPlatform(request: PlatformInstallRequest) {
+		platformRequest = request
+		currentProject = null
+		currentCallback = () => {}
+		projectInfo.value = request.project
+		instances.value = []
+		loading.value = true
+		defaultTab.value = 'existing'
+		compatibleLoaders.value = sortLoaders(request.loaders)
+		gameVersions.value = request.gameVersions
+		releaseGameVersions.value = new Set(request.gameVersions)
+		preferredLoader.value = null
+		preferredGameVersion.value = null
+
+		await nextTick()
+		modalRef?.show()
+		const gameVersionMetadataPromise = loadGameVersionMetadata(new Set(request.gameVersions))
+
+		try {
+			const [allInstances, installedIds] = await Promise.all([
+				list(),
+				request.getInstalledInstanceIds(),
+			])
+			const installed = new Set(installedIds)
+			const targets = allInstances.filter((instance) => !instance.quarantined)
+			instanceMap = Object.fromEntries(targets.map((instance) => [instance.id, instance]))
+			instances.value = targets.map((instance) => ({
+				id: instance.id,
+				name: instance.name,
+				iconUrl: getInstanceIconUrl(instance.icon_path),
+				installed: installed.has(instance.id),
+				compatible: request.isCompatible(instance),
+				installing: false,
+			}))
+			if (!instances.value.some((instance) => instance.compatible && !instance.installed)) {
+				defaultTab.value = 'new'
+			}
+		} catch (err) {
+			opts.handleError(err)
+		} finally {
+			loading.value = false
+		}
+		await gameVersionMetadataPromise
+	}
+
+	async function installToInstanceFromPlatform(
+		request: PlatformInstallRequest,
+		instance: ContentInstallInstance,
+	) {
+		const target = instanceMap[instance.id]
+		const storeInstance = instances.value.find((i) => i.id === instance.id)
+		if (!target) {
+			opts.handleError('No instance found')
+			return
+		}
+
+		if (storeInstance) storeInstance.installing = true
+		try {
+			const installed = await request.install(target)
+			if (installed) {
+				if (storeInstance) storeInstance.installed = true
+				markInstanceContentChanged(target.id)
+			}
+		} catch (err) {
+			opts.handleError(err)
+		} finally {
+			if (storeInstance) storeInstance.installing = false
+		}
+	}
+
+	async function createAndInstallFromPlatform(
+		request: PlatformInstallRequest,
+		data: { name: string; iconPath: string | null; loader: string; gameVersion: string },
+	) {
+		try {
+			const job = await install_create_instance({
+				name: data.name,
+				gameVersion: data.gameVersion,
+				loader: data.loader as InstanceLoader,
+				loaderVersion: 'latest',
+				iconPath: data.iconPath,
+			})
+			const id = installJobInstanceId(job)
+			if (!id) return
+
+			const installed = await request.install({
+				id,
+				name: data.name,
+				icon_path: data.iconPath ?? undefined,
+				game_version: data.gameVersion,
+				loader: data.loader as InstanceLoader,
+			})
+			if (installed) markInstanceContentChanged(id)
+			trackEvent('InstanceCreate', { source: 'ProjectInstallModal' })
+			await opts.router.push(`/instance/${encodeURIComponent(id)}`)
+			modalRef?.hide()
+		} catch (err) {
+			opts.handleError(err)
+		}
+	}
+
 	async function handleInstallToInstance(instance: ContentInstallInstance) {
+		if (platformRequest) {
+			await installToInstanceFromPlatform(platformRequest, instance)
+			return
+		}
+
 		const selectedInstance = instanceMap[instance.id]
 		const storeInstance = instances.value.find((i) => i.id === instance.id)
 		if (!currentProject || !selectedInstance) {
@@ -760,6 +889,11 @@ export function createContentInstall(opts: {
 		loader: string
 		gameVersion: string
 	}) {
+		if (platformRequest) {
+			await createAndInstallFromPlatform(platformRequest, data)
+			return
+		}
+
 		const loaderCandidates =
 			data.loader === 'vanilla' ? ['vanilla', 'datapack', 'minecraft'] : [data.loader]
 		const version =
@@ -1018,6 +1152,7 @@ export function createContentInstall(opts: {
 		incompatibilityWarningInstalling,
 		handleIncompatibilityWarningInstall,
 		handleIncompatibilityWarningCancel,
+		installFromPlatform,
 		install,
 		installingItems,
 		installRevisionByInstance,

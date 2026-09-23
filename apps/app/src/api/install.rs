@@ -1,6 +1,6 @@
 use crate::api::Result;
 use crate::api::instance::InstanceLink;
-use refract_lib::data::ModLoader;
+use refract_lib::data::{InstallExternalFileRequest, ModLoader};
 use refract_lib::install::{
     InstallJobSnapshot, InstallModpackPreview, InstallPostInstallEdit,
 };
@@ -29,6 +29,7 @@ pub fn init<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
             install_duplicate_instance,
             install_existing_instance,
             install_pack_to_existing_instance,
+            install_content,
             install_job_list,
             install_job_get,
             install_job_retry,
@@ -220,6 +221,22 @@ pub async fn install_pack_to_existing_instance(
         instance_id,
         location,
         post_install_edit.map(|edit| edit.into_core()).transpose()?,
+    )
+    .await?)
+}
+
+#[tauri::command]
+pub async fn install_content(
+    instance_id: String,
+    title: String,
+    icon_url: Option<String>,
+    files: Vec<InstallExternalFileRequest>,
+) -> Result<InstallJobSnapshot> {
+    Ok(refract_lib::install::install_content(
+        instance_id,
+        title,
+        icon_url,
+        files,
     )
     .await?)
 }

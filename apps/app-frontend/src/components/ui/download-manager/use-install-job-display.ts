@@ -14,6 +14,10 @@ const messages = defineMessages({
 		id: 'app.action-bar.install.updating-shared-content',
 		defaultMessage: 'Updating shared content',
 	},
+	addedToInstance: {
+		id: 'app.download-manager.added-to-instance',
+		defaultMessage: 'Added to {instance}',
+	},
 })
 
 const kindMessages = defineMessages({
@@ -42,6 +46,10 @@ const kindMessages = defineMessages({
 	update_shared_instance: {
 		id: 'app.download-manager.shared-instance-update',
 		defaultMessage: 'Shared instance update',
+	},
+	install_content: {
+		id: 'app.download-manager.content-installation',
+		defaultMessage: 'Content installation',
 	},
 })
 
@@ -286,8 +294,13 @@ export function useInstallJobDisplay() {
 		return instanceName ?? formatMessage(messages.unknownInstance)
 	}
 
-	function getText(job: InstallJobSnapshot): string {
-		if (job.status === 'succeeded') return formatMessage(kindMessages[job.kind])
+	function getText(job: InstallJobSnapshot, instanceName?: string): string {
+		if (job.status === 'succeeded') {
+			if (job.kind === 'install_content' && instanceName) {
+				return formatMessage(messages.addedToInstance, { instance: instanceName })
+			}
+			return formatMessage(kindMessages[job.kind])
+		}
 		if (job.status === 'canceled') return formatMessage(failureSummaryMessages.canceled)
 		if (job.status === 'failed' || job.status === 'interrupted') {
 			return getFailureSummary(job)

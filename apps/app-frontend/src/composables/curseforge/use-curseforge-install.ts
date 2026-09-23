@@ -4,23 +4,26 @@ import type { File as CurseForgeFile, Mod } from 'curseforge-js'
 import { computed, type MaybeRefOrGetter, ref, toValue } from 'vue'
 
 import {
+	compareGameVersionsDesc,
 	type CurseForgeContentType,
 	getInstalledCurseForgeFiles,
-	installCurseForgeProject,
+	getLoaderTypes,
+	LOADER_TAGS,
 	NoCompatibleFileError,
+	resolveCurseForgeInstall,
 } from '@/helpers/curseforge'
+import { install_content, wait_for_install_job } from '@/helpers/install'
+import { get_external_project_instances } from '@/helpers/instance'
 import type { GameInstance } from '@/helpers/types'
+import { CONTENT_PLATFORMS } from '@/platforms'
+import { injectAppEvents } from '@/providers/app-events'
+import {
+	injectContentInstall,
+	type InstallTargetInstance,
+	type PlatformInstallRequest,
+} from '@/providers/content-install'
 
 const messages = defineMessages({
-	installed: {
-		id: 'app.curseforge.install-success.title',
-		defaultMessage: 'Installed {name}',
-	},
-	installedWithDependencies: {
-		id: 'app.curseforge.install-success.dependencies',
-		defaultMessage:
-			'Also installed {count, plural, one {# dependency} other {# dependencies}}: {names}',
-	},
 	restrictedTitle: {
 		id: 'app.curseforge.restricted.title',
 		defaultMessage: 'Some files must be downloaded manually',
@@ -44,11 +47,17 @@ export function curseForgeInstalledQueryKey(instanceId: string | undefined) {
 	return ['curseforge', 'installed', instanceId] as const
 }
 
-/** Installs CurseForge projects into an instance and tracks which ones are installed or installing. */
+/**
+ * Installs CurseForge projects and tracks which ones are installed or installing. Installs go
+ * straight into `instance` when one is given, and otherwise through the shared install modal.
+ * Downloads run as install jobs, so progress and failures show in the download manager.
+ */
 export function useCurseForgeInstall(instance: MaybeRefOrGetter<GameInstance | null>) {
 	const { formatMessage } = useVIntl()
 	const { addNotification, handleError } = injectNotificationManager()
 	const queryClient = useQueryClient()
+	const contentInstall = injectContentInstall()
+	const appEvents = injectAppEvents()
 
 	const instanceId = computed(() => toValue(instance)?.id)
 	const installedQuery = useQuery(
@@ -74,15 +83,20 @@ export function useCurseForgeInstall(instance: MaybeRefOrGetter<GameInstance | n
 		installing.value = next
 	}
 
-	/** Installs the newest compatible file of `mod`, or `file` when given, replacing any installed file of it. */
-	async function install(mod: Mod, contentType: CurseForgeContentType, file?: CurseForgeFile) {
-		const target = toValue(instance)
-		if (!target) return
-
+	/** Installs `mod` into `target` with its dependencies, replacing any installed file of it. */
+	async function installInto(
+		target: InstallTargetInstance,
+		mod: Mod,
+		contentType: CurseForgeContentType,
+		file?: CurseForgeFile,
+	): Promise<boolean> {
 		setInstalling(mod.id, true)
 		try {
-			const installedFiles = installedQuery.data.value ?? new Map()
-			const result = await installCurseForgeProject(
+			const installedFiles = await queryClient.fetchQuery({
+				queryKey: curseForgeInstalledQueryKey(target.id),
+				queryFn: () => getInstalledCurseForgeFiles(target.id),
+			})
+			const plan = await resolveCurseForgeInstall(
 				mod,
 				contentType,
 				{
@@ -94,29 +108,28 @@ export function useCurseForgeInstall(instance: MaybeRefOrGetter<GameInstance | n
 				{ file, replacePath: installedFiles.get(String(mod.id))?.path },
 			)
 
-			const dependencies = result.installed.filter((project) => project.id !== mod.id)
-			if (result.installed.some((project) => project.id === mod.id)) {
-				addNotification({
-					title: formatMessage(messages.installed, { name: mod.name }),
-					text:
-						dependencies.length > 0
-							? formatMessage(messages.installedWithDependencies, {
-									count: dependencies.length,
-									names: dependencies.map((project) => project.name).join(', '),
-								})
-							: undefined,
-					type: 'success',
-				})
-			}
-			if (result.restricted.length > 0) {
+			if (plan.restricted.length > 0) {
 				addNotification({
 					title: formatMessage(messages.restrictedTitle),
 					text: formatMessage(messages.restrictedBody, {
-						names: result.restricted.map((project) => project.name).join(', '),
+						names: plan.restricted.map((project) => project.name).join(', '),
 					}),
 					type: 'warning',
 				})
 			}
+			if (plan.files.length === 0) return false
+
+			const job = await install_content(
+				target.id,
+				mod.name,
+				mod.logo?.thumbnailUrl || mod.logo?.url || null,
+				plan.files,
+			)
+			const succeeded = await wait_for_install_job(appEvents, job.job_id).then(
+				() => true,
+				() => false,
+			)
+			return succeeded && plan.files.some((entry) => entry.source.project_id === String(mod.id))
 		} catch (error) {
 			if (error instanceof NoCompatibleFileError) {
 				addNotification({
@@ -130,9 +143,64 @@ export function useCurseForgeInstall(instance: MaybeRefOrGetter<GameInstance | n
 			} else {
 				handleError(error as Error)
 			}
+			return false
 		} finally {
 			setInstalling(mod.id, false)
 			await queryClient.invalidateQueries({ queryKey: curseForgeInstalledQueryKey(target.id) })
+		}
+	}
+
+	function platformInstallRequest(
+		mod: Mod,
+		contentType: CurseForgeContentType,
+	): PlatformInstallRequest {
+		const author = mod.authors[0]
+		const gameVersions = [...new Set(mod.latestFilesIndexes.map((index) => index.gameVersion))]
+			.filter((version) => /^\d/.test(version))
+			.sort(compareGameVersionsDesc)
+		const loaders =
+			contentType === 'mod'
+				? [
+						...new Set(
+							mod.latestFilesIndexes
+								.map((index) => LOADER_TAGS[index.modLoader])
+								.filter((loader): loader is string => !!loader),
+						),
+					]
+				: ['vanilla']
+
+		return {
+			project: {
+				title: mod.name,
+				iconUrl: mod.logo?.thumbnailUrl || mod.logo?.url,
+				link: `${CONTENT_PLATFORMS.curseforge.projectPathPrefix}${mod.id}`,
+				owner: author ? { name: author.name, circle: true, link: author.url } : null,
+			},
+			loaders,
+			gameVersions,
+			isCompatible: (target) => {
+				const loaderTypes = getLoaderTypes(contentType, target.loader)
+				return mod.latestFilesIndexes.some(
+					(index) =>
+						index.gameVersion === target.game_version &&
+						(loaderTypes.length === 0 || loaderTypes.includes(index.modLoader)),
+				)
+			},
+			getInstalledInstanceIds: () => get_external_project_instances('curseforge', String(mod.id)),
+			install: (target) => installInto(target, mod, contentType),
+		}
+	}
+
+	/**
+	 * Installs the newest compatible file of `mod`, or `file` when given. Without an instance, this
+	 * opens the install modal to pick or create one.
+	 */
+	async function install(mod: Mod, contentType: CurseForgeContentType, file?: CurseForgeFile) {
+		const target = toValue(instance)
+		if (target) {
+			await installInto(target, mod, contentType, file)
+		} else {
+			await contentInstall.installFromPlatform(platformInstallRequest(mod, contentType))
 		}
 	}
 

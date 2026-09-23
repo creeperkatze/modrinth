@@ -2105,7 +2105,10 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 				:is-primary="(route) => route.path === '/'"
 				:is-subpage="
 					() =>
-						(route.path.startsWith('/browse') || isProjectPath(route.path)) && route.query.i
+						(route.path === '/discover' ||
+							route.path.startsWith('/browse') ||
+							isProjectPath(route.path)) &&
+						route.query.i
 				"
 			>
 				<PlayIcon class="ml-0.5" />

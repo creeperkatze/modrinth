@@ -29,6 +29,7 @@ import { truncatedTooltip } from '#ui/utils/truncate'
 
 import type {
 	ClientWarningType,
+	ContentCardPlatform,
 	ContentCardProject,
 	ContentCardVersion,
 	ContentOwner,
@@ -69,6 +70,7 @@ interface Props {
 	versionLink?: string | RouteLocationRaw
 	owner?: ContentOwner
 	source?: ContentSource
+	platform?: ContentCardPlatform
 	external?: boolean
 	enabled?: boolean
 	locked?: boolean
@@ -99,6 +101,7 @@ const props = withDefaults(defineProps<Props>(), {
 	versionLink: undefined,
 	owner: undefined,
 	source: undefined,
+	platform: undefined,
 	external: false,
 	enabled: undefined,
 	locked: false,
@@ -237,6 +240,16 @@ const installTooltip = computed(() => {
 						>
 							{{ projectTitle }}
 						</AutoLink>
+						<span
+							v-if="platform"
+							v-tooltip="platform.name"
+							role="img"
+							:aria-label="platform.name"
+							tabindex="0"
+							class="inline-flex size-5 shrink-0 cursor-help items-center justify-center text-secondary"
+						>
+							<component :is="platform.icon" class="size-4" aria-hidden="true" />
+						</span>
 						<slot name="title-badges" />
 						<span
 							v-if="synced && hideActions"

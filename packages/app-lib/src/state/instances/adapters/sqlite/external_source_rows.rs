@@ -85,6 +85,26 @@ pub(crate) async fn upsert_external_source(
     Ok(())
 }
 
+/// Returns the ids of instances that contain a file from the given project on an external platform.
+pub(crate) async fn get_instances_with_external_project(
+    platform: ExternalPlatform,
+    project_id: &str,
+    exec: impl Executor<'_, Database = Sqlite>,
+) -> crate::Result<Vec<String>> {
+    Ok(sqlx::query_scalar::<_, String>(
+        "
+		SELECT DISTINCT files.instance_id
+		FROM instance_files files
+		INNER JOIN external_content_sources sources ON sources.sha1 = files.sha1
+		WHERE sources.platform = ? AND sources.project_id = ? AND files.missing = 0
+		",
+    )
+    .bind(platform.as_str())
+    .bind(project_id)
+    .fetch_all(exec)
+    .await?)
+}
+
 /// Returns the known external sources for the given SHA-1 hashes, keyed by hash.
 pub(crate) async fn get_external_sources(
     hashes: &[&str],

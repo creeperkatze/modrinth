@@ -1,3 +1,4 @@
+import type { ExternalContentSource } from '@modrinth/ui'
 import { invoke } from '@tauri-apps/api/core'
 
 import type { InstallErrorView } from '@/generated/app-events/InstallErrorView'
@@ -10,7 +11,12 @@ import type { InstallProgressSecondary } from '@/generated/app-events/InstallPro
 import type { SharedInstanceUnavailableReason } from '@/generated/app-events/SharedInstanceUnavailableReason'
 import type { AppEvents } from '@/providers/app-events'
 
-import type { InstanceIconConfig, InstanceLink, InstanceLoader } from './types'
+import type {
+	ContentFileProjectType,
+	InstanceIconConfig,
+	InstanceLink,
+	InstanceLoader,
+} from './types'
 
 export type {
 	InstallErrorView,
@@ -21,6 +27,19 @@ export type {
 	InstallProgress,
 	InstallProgressSecondary,
 	SharedInstanceUnavailableReason,
+}
+
+/** A file from an external platform, already resolved, to download into an instance. */
+export interface InstallExternalFileRequest {
+	url: string
+	file_name: string
+	sha1: string
+	/** File size in bytes, used for download progress. */
+	size?: number | null
+	project_type: ContentFileProjectType
+	source: ExternalContentSource
+	/** An installed file of the same project, relative to the instance, that this file replaces. */
+	replace_path?: string | null
 }
 
 export interface PackLocationVersionId {
@@ -261,6 +280,21 @@ export async function install_pack_to_existing_instance(
 		instanceId,
 		location,
 		postInstallEdit,
+	})
+}
+
+/** Queues a download of external platform files into an instance, shown as `title` in the download manager. */
+export async function install_content(
+	instanceId: string,
+	title: string,
+	iconUrl: string | null,
+	files: InstallExternalFileRequest[],
+) {
+	return await invoke<InstallJobSnapshot>('plugin:install|install_content', {
+		instanceId,
+		title,
+		iconUrl,
+		files,
 	})
 }
 

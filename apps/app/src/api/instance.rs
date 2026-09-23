@@ -4,10 +4,10 @@ use path_util::SafeRelativeUtf8UnixPathBuf;
 use refract_lib::DownloadReason;
 use refract_lib::data::{
     AppliedContentSetPatch, ContentItem, Dependency,
-    EditInstance as CoreEditInstance, InstallExternalFileRequest,
-    InstanceInstallCandidate, InstanceInstallTarget,
-    InstanceLaunchOverridesPatch, InstanceLink as CoreInstanceLink,
-    InstanceMetadata, InstanceTabVisibility, LinkedModpackInfo,
+    EditInstance as CoreEditInstance, InstanceInstallCandidate,
+    InstanceInstallTarget, InstanceLaunchOverridesPatch,
+    InstanceLink as CoreInstanceLink, InstanceMetadata, InstanceTabVisibility,
+    LinkedModpackInfo,
     SharedInstanceAttachment as CoreSharedInstanceAttachment,
     SharedInstanceRole,
 };
@@ -38,6 +38,7 @@ pub fn init<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
             instance_get_projects,
             instance_get_installed_project_ids,
             instance_get_install_candidates,
+            instance_get_external_project_instances,
             instance_content,
             instance_get_content_items,
             instance_sync_content_files,
@@ -97,7 +98,6 @@ pub fn init<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
             instance_install_project_with_dependencies,
             instance_switch_project_version_with_dependencies,
             instance_add_project_from_path,
-            instance_install_external_file,
             instance_is_file_on_modrinth,
             instance_toggle_disable_project,
             instance_set_project_locked,
@@ -625,6 +625,17 @@ pub async fn instance_get_install_candidates(
         project_id,
         project_type,
         targets,
+    )
+    .await?)
+}
+
+#[tauri::command]
+pub async fn instance_get_external_project_instances(
+    platform: ExternalPlatform,
+    project_id: &str,
+) -> Result<Vec<String>> {
+    Ok(refract_lib::instance::get_external_project_instances(
+        platform, project_id,
     )
     .await?)
 }
@@ -1258,17 +1269,6 @@ pub async fn instance_add_project_from_path(
         project_type,
     )
     .await?)
-}
-
-#[tauri::command]
-pub async fn instance_install_external_file(
-    instance_id: &str,
-    request: InstallExternalFileRequest,
-) -> Result<String> {
-    Ok(
-        refract_lib::instance::install_external_file(instance_id, request)
-            .await?,
-    )
 }
 
 #[tauri::command]

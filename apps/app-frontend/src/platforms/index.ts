@@ -1,5 +1,10 @@
 import { CurseForgeIcon, ModrinthIcon } from '@modrinth/assets'
-import { defineMessages, type MessageDescriptor } from '@modrinth/ui'
+import {
+	type ContentCardPlatform,
+	type ContentItem,
+	defineMessages,
+	type MessageDescriptor,
+} from '@modrinth/ui'
 import type { Component } from 'vue'
 import type { LocationQuery, LocationQueryRaw, RouteLocationRaw } from 'vue-router'
 
@@ -12,6 +17,8 @@ export interface ContentPlatform {
 	name: string
 	icon: Component
 	description: MessageDescriptor
+	/** Content types that can be browsed on the platform. */
+	projectTypes: string[]
 	/** Content type the platform's Browse page opens on. */
 	defaultProjectType: string
 	/** Path prefix shared by all of this platform's project page routes. */
@@ -36,6 +43,7 @@ export const CONTENT_PLATFORMS: Record<ContentPlatformId, ContentPlatform> = {
 		name: 'Modrinth',
 		icon: ModrinthIcon,
 		description: messages.modrinthDescription,
+		projectTypes: ['modpack', 'mod', 'resourcepack', 'datapack', 'shader', 'server'],
 		defaultProjectType: 'modpack',
 		projectPathPrefix: '/project/',
 		projectRoute: (projectId, query) => ({ path: `/project/${projectId}`, query }),
@@ -45,6 +53,7 @@ export const CONTENT_PLATFORMS: Record<ContentPlatformId, ContentPlatform> = {
 		name: 'CurseForge',
 		icon: CurseForgeIcon,
 		description: messages.curseforgeDescription,
+		projectTypes: ['mod', 'resourcepack', 'datapack', 'shader'],
 		defaultProjectType: 'mod',
 		projectPathPrefix: '/curseforge/',
 		projectRoute: (projectId, query) => ({ path: `/curseforge/${projectId}`, query }),
@@ -58,6 +67,9 @@ export const DEFAULT_CONTENT_PLATFORM: ContentPlatformId = 'modrinth'
 /** Query parameter holding the platform the Browse page searches. */
 export const PLATFORM_QUERY_PARAM = 'src'
 
+/** Query parameter holding the content type the Discover page should open platforms on. */
+export const PROJECT_TYPE_QUERY_PARAM = 'type'
+
 export function isContentPlatformId(value: unknown): value is ContentPlatformId {
 	return typeof value === 'string' && value in CONTENT_PLATFORMS
 }
@@ -66,6 +78,27 @@ export function isContentPlatformId(value: unknown): value is ContentPlatformId 
 export function platformFromQuery(query: LocationQuery): ContentPlatformId {
 	const platform = query[PLATFORM_QUERY_PARAM]
 	return isContentPlatformId(platform) ? platform : DEFAULT_CONTENT_PLATFORM
+}
+
+/**
+ * The platform a content item was installed from, or `null` for files added by hand. Files
+ * installed from another platform keep that platform even when Modrinth also recognises them.
+ */
+export function contentItemPlatform(
+	item: Pick<ContentItem, 'project' | 'external_source'>,
+): ContentPlatformId | null {
+	const externalPlatform = item.external_source?.platform
+	if (isContentPlatformId(externalPlatform)) return externalPlatform
+	return item.project ? 'modrinth' : null
+}
+
+/** The platform badge shown on a content item's card. */
+export function contentItemPlatformBadge(
+	item: Pick<ContentItem, 'project' | 'external_source'>,
+): ContentCardPlatform | undefined {
+	const platform = contentItemPlatform(item)
+	if (!platform) return undefined
+	return { name: CONTENT_PLATFORMS[platform].name, icon: CONTENT_PLATFORMS[platform].icon }
 }
 
 /** Whether `path` belongs to any platform's project page. */
@@ -86,6 +119,34 @@ export function platformBrowseRoute(
 			...(platform !== DEFAULT_CONTENT_PLATFORM ? { [PLATFORM_QUERY_PARAM]: platform } : {}),
 		},
 	}
+}
+
+/**
+ * The Discover page for adding content to an instance, opening platforms on `projectType` where
+ * they support it.
+ */
+export function instanceDiscoverRoute(instanceId: string, projectType?: string): RouteLocationRaw {
+	return {
+		path: '/discover',
+		query: {
+			i: instanceId,
+			...(projectType ? { [PROJECT_TYPE_QUERY_PARAM]: projectType } : {}),
+		},
+	}
+}
+
+/** The Browse page a Discover page card opens, honouring the requested content type when supported. */
+export function discoverPlatformRoute(
+	platform: ContentPlatformId,
+	query: LocationQuery,
+): RouteLocationRaw {
+	const requestedType = query[PROJECT_TYPE_QUERY_PARAM]
+	const { projectTypes, defaultProjectType } = CONTENT_PLATFORMS[platform]
+	const projectType =
+		typeof requestedType === 'string' && projectTypes.includes(requestedType)
+			? requestedType
+			: defaultProjectType
+	return platformBrowseRoute(platform, projectType, query)
 }
 
 /**

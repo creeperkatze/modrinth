@@ -1,8 +1,8 @@
 use crate::api::pack::import::ImportLauncherType;
 use crate::api::pack::install_from::{CreatePackInstance, CreatePackLocation};
 use crate::state::{
-    InstanceIconConfig, InstanceInstallStage, InstanceLink, InstanceMetadata,
-    ModLoader,
+    InstallExternalFileRequest, InstanceIconConfig, InstanceInstallStage,
+    InstanceLink, InstanceMetadata, ModLoader,
 };
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -198,6 +198,14 @@ pub enum InstallRequest {
         instance_id: String,
         data: SharedInstanceInstallData,
     },
+    /// Downloads resolved content files from an external platform into an existing instance.
+    InstallContent {
+        instance_id: String,
+        /// Shown in the downloads queue, usually the project being installed.
+        title: String,
+        icon_url: Option<String>,
+        files: Vec<InstallExternalFileRequest>,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -273,14 +281,22 @@ impl InstallRequest {
             Self::UpdateSharedInstance { .. } => {
                 InstallJobKind::UpdateSharedInstance
             }
+            Self::InstallContent { .. } => InstallJobKind::InstallContent,
         }
+    }
+
+    /// Whether the job needs the instance to itself. Content installs only add files, so they can
+    /// run alongside other jobs without marking the instance as installing.
+    pub fn reserves_instance(&self) -> bool {
+        !matches!(self, Self::InstallContent { .. })
     }
 
     pub fn target(&self) -> InstallTarget {
         match self {
             Self::InstallExistingInstance { instance_id, .. }
             | Self::InstallPackToExistingInstance { instance_id, .. }
-            | Self::UpdateSharedInstance { instance_id, .. } => {
+            | Self::UpdateSharedInstance { instance_id, .. }
+            | Self::InstallContent { instance_id, .. } => {
                 InstallTarget::ExistingInstance {
                     instance_id: instance_id.clone(),
                 }
@@ -293,7 +309,8 @@ impl InstallRequest {
         match self {
             Self::InstallExistingInstance { instance_id, .. }
             | Self::InstallPackToExistingInstance { instance_id, .. }
-            | Self::UpdateSharedInstance { instance_id, .. } => {
+            | Self::UpdateSharedInstance { instance_id, .. }
+            | Self::InstallContent { instance_id, .. } => {
                 InstallCleanup::RestoreExistingInstance {
                     instance_id: instance_id.clone(),
                 }
@@ -318,6 +335,7 @@ pub enum InstallJobKind {
     InstallExistingInstance,
     InstallPackToExistingInstance,
     UpdateSharedInstance,
+    InstallContent,
 }
 
 impl InstallJobKind {
@@ -333,6 +351,7 @@ impl InstallJobKind {
                 "install_pack_to_existing_instance"
             }
             Self::UpdateSharedInstance => "update_shared_instance",
+            Self::InstallContent => "install_content",
         }
     }
 
@@ -347,6 +366,7 @@ impl InstallJobKind {
                 Self::InstallPackToExistingInstance
             }
             "update_shared_instance" => Self::UpdateSharedInstance,
+            "install_content" => Self::InstallContent,
             _ => Self::CreateInstance,
         }
     }

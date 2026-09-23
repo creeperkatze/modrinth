@@ -5,6 +5,7 @@ import { open } from '@tauri-apps/plugin-dialog'
 import { useRouter } from 'vue-router'
 
 import { add_project_from_path } from '@/helpers/instance'
+import { instanceDiscoverRoute } from '@/platforms'
 
 const { handleError } = injectNotificationManager()
 
@@ -27,10 +28,12 @@ const handleAddContentFromFile = async () => {
 }
 
 const handleSearchContent = async () => {
-	await router.push({
-		path: `/browse/${props.instance.loader === 'vanilla' ? 'resourcepack' : 'mod'}`,
-		query: { i: props.instance.id },
-	})
+	await router.push(
+		instanceDiscoverRoute(
+			props.instance.id,
+			props.instance.loader === 'vanilla' ? 'resourcepack' : 'mod',
+		),
+	)
 }
 </script>
 

@@ -1,4 +1,5 @@
 import type { Labrinth } from '@modrinth/api-client'
+import type { Component } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 
 import type { ButtonMenuOption } from '#ui/components/base/buttons'
@@ -25,6 +26,12 @@ export interface ContentOwner {
 export interface ContentSource {
 	project: ContentCardProject
 	link?: string | RouteLocationRaw | (() => void)
+}
+
+/** Platform a content item came from, shown as a badge on its card. */
+export interface ContentCardPlatform {
+	name: string
+	icon: Component
 }
 
 export type ClientWarningType = 'retained' | 'depends' | 'environment'
@@ -75,6 +82,7 @@ export interface ContentCardTableItem {
 	versionLink?: string | RouteLocationRaw
 	owner?: ContentOwner
 	source?: ContentSource
+	platform?: ContentCardPlatform
 	external?: boolean
 	enabled?: boolean
 	locked?: boolean

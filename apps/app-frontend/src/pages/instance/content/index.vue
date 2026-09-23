@@ -152,7 +152,7 @@ import { get as getSettings, set as setSettings } from '@/helpers/settings'
 import { set_synced_pack_enabled, syncedPackKeys } from '@/helpers/synced-packs'
 import type { CacheBehaviour } from '@/helpers/types'
 import { highlightModInInstance } from '@/helpers/utils.js'
-import { CONTENT_PLATFORMS, isContentPlatformId } from '@/platforms'
+import { CONTENT_PLATFORMS, contentItemPlatformBadge, isContentPlatformId } from '@/platforms'
 import { type AppEventPayload, injectAppEvents } from '@/providers/app-events'
 import { injectContentInstall } from '@/providers/content-install'
 
@@ -1749,6 +1749,7 @@ provideContentManager({
 					link: contentOwnerLink(item.owner),
 				}
 			: externalContentOwner(item),
+		platform: contentItemPlatformBadge(item),
 		external: item.external ?? (!item.project && !item.external_source),
 		enabled: canMutateContent(item) ? item.enabled : undefined,
 		synced: !!item.synced_pack,

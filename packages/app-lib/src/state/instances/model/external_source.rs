@@ -59,6 +59,12 @@ pub struct InstallExternalFileRequest {
     pub url: String,
     pub file_name: String,
     pub sha1: String,
+    /// File size in bytes, used for download progress.
+    #[serde(default)]
+    pub size: Option<u64>,
     pub project_type: ProjectType,
     pub source: ExternalContentSource,
+    /// An installed file of the same project, relative to the instance, that this file replaces.
+    #[serde(default)]
+    pub replace_path: Option<String>,
 }

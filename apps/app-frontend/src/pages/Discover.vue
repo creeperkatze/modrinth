@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { ChevronRightIcon, CompassIcon } from '@modrinth/assets'
-import { commonMessages, defineMessages, useVIntl } from '@modrinth/ui'
+import { BrowseInstallHeader, commonMessages, defineMessages, useVIntl } from '@modrinth/ui'
+import { useQuery } from '@tanstack/vue-query'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
-import { CONTENT_PLATFORM_IDS, CONTENT_PLATFORMS, platformBrowseRoute } from '@/platforms'
-import { useRootBreadcrumb } from '@/providers/breadcrumbs'
+import { getInstanceIconUrl } from '@/helpers/instance'
+import { instanceBreadcrumb } from '@/pages/instance/breadcrumbs'
+import { instanceDetailQueryOptions } from '@/pages/instance/query-options'
+import { CONTENT_PLATFORM_IDS, CONTENT_PLATFORMS, discoverPlatformRoute } from '@/platforms'
+import { type BreadcrumbDefinition, useBreadcrumb, useRootBreadcrumb } from '@/providers/breadcrumbs'
 
 const { formatMessage } = useVIntl()
 const route = useRoute()
@@ -19,29 +23,70 @@ const messages = defineMessages({
 		id: 'app.discover.browse-platform',
 		defaultMessage: 'Browse {platform}',
 	},
+	backToInstance: {
+		id: 'app.discover.back-to-instance',
+		defaultMessage: 'Back to instance',
+	},
 })
 
-useRootBreadcrumb({
+const instanceId = typeof route.query.i === 'string' ? route.query.i : ''
+const instanceQuery = useQuery(
+	computed(() => ({
+		...instanceDetailQueryOptions(instanceId),
+		enabled: !!instanceId,
+	})),
+)
+const instance = computed(() => instanceQuery.data.value ?? null)
+
+const installContext = computed(() => {
+	if (!instance.value) return null
+	return {
+		name: instance.value.name,
+		loader: instance.value.loader,
+		gameVersion: instance.value.game_version,
+		iconSrc: getInstanceIconUrl(instance.value.icon_path),
+		backUrl: `/instance/${encodeURIComponent(instance.value.id)}`,
+		backLabel: formatMessage(messages.backToInstance),
+		heading: formatMessage(commonMessages.installingContentLabel),
+	}
+})
+
+const discoverBreadcrumbDefinition: BreadcrumbDefinition = {
 	slot: 'discover',
 	id: 'discover',
 	label: () => formatMessage(commonMessages.discoverContentLabel),
 	to: () => route.fullPath,
 	visual: { type: 'icon', component: CompassIcon },
-})
+}
+if (instanceId) {
+	const instanceHandle = useRootBreadcrumb(
+		instanceBreadcrumb({
+			instanceId,
+			instance,
+			loadingLabel: () => formatMessage(commonMessages.loadingLabel),
+		}),
+	)
+	useBreadcrumb(discoverBreadcrumbDefinition, { parent: instanceHandle })
+} else {
+	useRootBreadcrumb(discoverBreadcrumbDefinition)
+}
 
 const platforms = computed(() =>
-	CONTENT_PLATFORM_IDS.map((id) => {
-		const platform = CONTENT_PLATFORMS[id]
-		return {
-			...platform,
-			to: platformBrowseRoute(id, platform.defaultProjectType, route.query),
-		}
-	}),
+	CONTENT_PLATFORM_IDS.map((id) => ({
+		...CONTENT_PLATFORMS[id],
+		to: discoverPlatformRoute(id, route.query),
+	})),
 )
 </script>
 
 <template>
 	<div class="flex flex-col gap-6 p-6">
+		<div
+			v-if="installContext"
+			class="sticky top-0 z-20 -mx-6 -mt-6 rounded-tl-[--radius-xl] border-0 border-b border-solid bg-surface-1 px-3 py-4 border-surface-5"
+		>
+			<BrowseInstallHeader :install-context="installContext" />
+		</div>
 		<div class="flex flex-col gap-1">
 			<h1 class="m-0 text-2xl font-extrabold text-contrast">
 				{{ formatMessage(commonMessages.discoverContentLabel) }}

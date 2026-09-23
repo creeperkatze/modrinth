@@ -111,7 +111,7 @@ export function useDownloadManager() {
 				canCancel: job.can_cancel,
 				title: display.getTitle(job, instance?.name),
 				iconUrl: getIconUrl(job.display?.icon) ?? instance?.icon ?? null,
-				text: display.getText(job),
+				text: display.getText(job, instance?.name),
 				finishedAt: job.finished ?? job.modified,
 				progress: display.getProgress(job),
 				overallProgress: overallProgress.get(job.job_id),

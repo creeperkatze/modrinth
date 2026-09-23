@@ -15,8 +15,6 @@ import {
 } from '@modrinth/assets'
 import {
 	Button,
-	Combobox,
-	type ComboboxOption,
 	commonMessages,
 	defineMessages,
 	TeleportOverflowMenu,
@@ -49,7 +47,7 @@ import {
 	hasCurseForgeApiKey,
 	LOADER_TAGS,
 } from '@/helpers/curseforge'
-import { getInstanceIconUrl, list as listInstances } from '@/helpers/instance'
+import { getInstanceIconUrl } from '@/helpers/instance'
 import { instanceDetailQueryOptions } from '@/pages/instance/query-options'
 import { CONTENT_PLATFORMS, projectBrowseRoute } from '@/platforms'
 
@@ -85,7 +83,6 @@ const messages = defineMessages({
 		id: 'app.curseforge.project.download-on-curseforge.tooltip',
 		defaultMessage: "This project's author doesn't allow downloads from other apps",
 	},
-	installTo: { id: 'app.curseforge.project.install-to', defaultMessage: 'Install to instance...' },
 	switchVersion: { id: 'app.curseforge.project.switch-version', defaultMessage: 'Switch version' },
 	backToBrowse: { id: 'app.curseforge.project.back-to-browse', defaultMessage: 'Back to discover' },
 	backToInstance: {
@@ -192,22 +189,6 @@ const installContext = computed(() => {
 		heading: formatMessage(commonMessages.installingContentLabel),
 	}
 })
-
-const instancesQuery = useQuery({
-	queryKey: ['curseforge', 'instances'],
-	queryFn: listInstances,
-	enabled: computed(() => !instance.value),
-})
-const instanceOptions = computed<ComboboxOption<string>[]>(() =>
-	(instancesQuery.data.value ?? []).map((candidate) => ({
-		value: candidate.id,
-		label: `${candidate.name} (${candidate.loader} ${candidate.game_version})`,
-	})),
-)
-
-function selectInstance(id: string) {
-	void router.replace({ query: { ...route.query, i: id } })
-}
 
 function install(file?: CurseForgeFile) {
 	if (mod.value && contentType.value) void installProject(mod.value, contentType.value, file)
@@ -331,7 +312,7 @@ const details = computed<ProjectDetail[]>(() => {
 						<ExternalIcon />
 						{{ formatMessage(messages.downloadOnCurseForge) }}
 					</Button>
-					<template v-else-if="instance">
+					<template v-else>
 						<Button
 							v-if="isInstalled && route.name !== 'CurseForgeFiles'"
 							size="xl"
@@ -362,14 +343,6 @@ const details = computed<ProjectDetail[]>(() => {
 							}}
 						</Button>
 					</template>
-					<Combobox
-						v-else
-						:options="instanceOptions"
-						:placeholder="formatMessage(messages.installTo)"
-						searchable
-						class="!w-[16rem]"
-						@update:model-value="(value: string) => selectInstance(value)"
-					/>
 					<TeleportOverflowMenu
 						type="quiet"
 						size="xl"

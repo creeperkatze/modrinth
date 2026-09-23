@@ -3,8 +3,8 @@ use super::model::{
     InstallCleanup, InstallErrorContext, InstallErrorView, InstallJobDisplay,
     InstallJobEventKind, InstallJobSnapshot, InstallJobState, InstallJobStatus,
     InstallPhaseDetails, InstallPhaseId, InstallPostInstallEdit,
-    InstallProgress, InstallRequest, InstallRollbackState, InstallTarget,
-    SharedInstanceInstallData,
+    InstallProgress, InstallProgressSecondary, InstallRequest,
+    InstallRollbackState, InstallTarget, SharedInstanceInstallData,
 };
 use super::shared_instance::{
     apply_shared_instance_content, apply_shared_instance_update,
@@ -24,12 +24,14 @@ use crate::event::emit::emit_instance;
 use crate::state::instances::adapters::sqlite::content_rows;
 use crate::state::instances::commands::resolve_icon_path;
 use crate::state::{
-    ContentSourceKind, InstanceIconConfig, InstanceInstallStage, InstanceLink,
-    ModLoader, State,
+    ContentSourceKind, InstallExternalFileRequest, InstanceIconConfig,
+    InstanceInstallStage, InstanceLink, ModLoader, State,
 };
 use crate::util::fetch::DownloadReason;
 use std::collections::{HashMap, HashSet};
+use std::future::Future;
 use std::path::PathBuf;
+use std::pin::Pin;
 use std::sync::{Arc, LazyLock, Mutex, Weak};
 use tokio::sync::{Mutex as AsyncMutex, MutexGuard, OwnedMutexGuard};
 use uuid::Uuid;
@@ -71,6 +73,18 @@ fn reserve_target(
                 "This instance already has an active install job",
             )
         })
+}
+
+/// Reserves the job's target unless the request can run alongside other jobs on the same instance.
+fn reserve_job_target(
+    request: &InstallRequest,
+    target: &InstallTarget,
+) -> crate::Result<Option<OwnedMutexGuard<()>>> {
+    if request.reserves_instance() {
+        reserve_target(target)
+    } else {
+        Ok(None)
+    }
 }
 
 pub async fn create_instance(
@@ -137,6 +151,22 @@ pub async fn duplicate_instance(
     start(InstallRequest::DuplicateInstance { source_instance_id }).await
 }
 
+/// Queues a job that downloads resolved content files from an external platform into an instance.
+pub async fn install_content(
+    instance_id: String,
+    title: String,
+    icon_url: Option<String>,
+    files: Vec<InstallExternalFileRequest>,
+) -> crate::Result<InstallJobSnapshot> {
+    start(InstallRequest::InstallContent {
+        instance_id,
+        title,
+        icon_url,
+        files,
+    })
+    .await
+}
+
 pub async fn install_existing_instance(
     instance_id: String,
     force: bool,
@@ -195,7 +225,8 @@ pub async fn retry_job(job_id: Uuid) -> crate::Result<InstallJobSnapshot> {
         .into());
     }
 
-    let cleanup_target_guard = reserve_target(&job.state.target)?;
+    let cleanup_target_guard =
+        reserve_job_target(&job.state.request, &job.state.target)?;
 
     if job.state.rollback_error.is_some() {
         recovery::apply_cleanup(&job.state, &state).await?;
@@ -203,7 +234,8 @@ pub async fn retry_job(job_id: Uuid) -> crate::Result<InstallJobSnapshot> {
     }
 
     drop(cleanup_target_guard);
-    let mut target_guard = reserve_target(&job.state.request.target())?;
+    let mut target_guard =
+        reserve_job_target(&job.state.request, &job.state.request.target())?;
     job.state.target = job.state.request.target();
     job.state.cleanup = job.state.request.cleanup();
     job.state.rollback = None;
@@ -277,7 +309,8 @@ pub async fn retry_job(job_id: Uuid) -> crate::Result<InstallJobSnapshot> {
         }
     };
     if target_guard.is_none() {
-        target_guard = reserve_target(&job.state.target)?;
+        target_guard =
+            reserve_job_target(&job.state.request, &job.state.target)?;
     }
     if let Err(error) = lock_install_target(&job.state, &state).await {
         let error_view = install_error_view(
@@ -405,7 +438,7 @@ pub async fn dismiss_job(job_id: Uuid) -> crate::Result<()> {
 
 async fn start(request: InstallRequest) -> crate::Result<InstallJobSnapshot> {
     let _admission = INSTALL_ADMISSION.lock().await;
-    let mut target_guard = reserve_target(&request.target())?;
+    let mut target_guard = reserve_job_target(&request, &request.target())?;
     let state = State::get().await?;
     let id = Uuid::new_v4();
     let mut job_state = InstallJobState::new(request);
@@ -450,7 +483,8 @@ async fn start(request: InstallRequest) -> crate::Result<InstallJobSnapshot> {
         }
     };
     if target_guard.is_none() {
-        target_guard = reserve_target(&job_state.target)?;
+        target_guard =
+            reserve_job_target(&job_state.request, &job_state.target)?;
     }
     if let Err(error) = lock_install_target(&job_state, &state).await {
         let error_view = install_error_view(
@@ -653,6 +687,7 @@ async fn prepare_initial_instance(
         | InstallRequest::UpdateSharedInstance { instance_id, .. } => {
             prepare_existing_rollback(job_state, state, &instance_id).await?;
         }
+        InstallRequest::InstallContent { .. } => {}
     }
 
     Ok(())
@@ -1182,7 +1217,101 @@ async fn run_request(
             emit_instance(&instance_id, InstancePayloadType::Edited).await?;
             Ok(Some(instance_id))
         }
+        InstallRequest::InstallContent {
+            instance_id, files, ..
+        } => {
+            install_content_files(job_id, job_state, &instance_id, &files)
+                .await?;
+            Ok(Some(instance_id))
+        }
     }
+}
+
+/// Downloads and installs each file in order, reporting completed files and downloaded bytes.
+async fn install_content_files(
+    job_id: Uuid,
+    job_state: &InstallJobState,
+    instance_id: &str,
+    files: &[InstallExternalFileRequest],
+) -> crate::Result<()> {
+    let reporter = InstallProgressReporter::new(job_id, job_state.clone());
+    let total_files = files.len() as u64;
+    let total_bytes: u64 = files.iter().filter_map(|file| file.size).sum();
+    let content_progress = move |files_done: u64, bytes_done: u64| {
+        Some(InstallProgress {
+            current: files_done,
+            total: total_files,
+            secondary: (total_bytes > 0).then(|| InstallProgressSecondary {
+                current: bytes_done.min(total_bytes),
+                total: total_bytes,
+            }),
+        })
+    };
+
+    let mut completed_bytes = 0_u64;
+    for (index, file) in files.iter().enumerate() {
+        let files_done = index as u64;
+        super::control::checkpoint(job_id).await?;
+        reporter
+            .update(
+                InstallPhaseId::DownloadingContent,
+                content_progress(files_done, completed_bytes),
+                InstallPhaseDetails::Empty,
+            )
+            .await?;
+        reporter
+            .set_context(
+                InstallErrorContext::new("download content file")
+                    .file_path(file.file_name.clone())
+                    .urls(vec![file.url.clone()])
+                    .expected_hash(file.sha1.clone())
+                    .maybe_expected_size(file.size)
+                    .project_id(file.source.project_id.clone())
+                    .build(),
+            )
+            .await?;
+
+        let mut last_reported_bytes = 0_u64;
+        let mut progress = |current: u64,
+                            total: u64|
+         -> Pin<
+            Box<dyn Future<Output = crate::Result<()>> + Send>,
+        > {
+            let min_delta = (total / 200).max(256 * 1024);
+            if current < total
+                && current.saturating_sub(last_reported_bytes) < min_delta
+            {
+                return Box::pin(async { Ok(()) });
+            }
+
+            last_reported_bytes = current;
+            let reporter = reporter.clone();
+            Box::pin(async move {
+                reporter
+                    .update(
+                        InstallPhaseId::DownloadingContent,
+                        content_progress(files_done, completed_bytes + current),
+                        InstallPhaseDetails::Empty,
+                    )
+                    .await
+            })
+        };
+        crate::api::instance::install_external_file(
+            instance_id,
+            file,
+            Some(&mut progress),
+        )
+        .await?;
+        completed_bytes += file.size.unwrap_or(0);
+    }
+
+    reporter
+        .update(
+            InstallPhaseId::DownloadingContent,
+            content_progress(total_files, total_bytes),
+            InstallPhaseDetails::Empty,
+        )
+        .await
 }
 
 async fn apply_post_install_edit(
@@ -1503,6 +1632,10 @@ async fn lock_install_target(
     job_state: &InstallJobState,
     state: &State,
 ) -> crate::Result<()> {
+    if !job_state.request.reserves_instance() {
+        return Ok(());
+    }
+
     match &job_state.target {
         InstallTarget::NewInstance {
             instance_id: Some(instance_id),
@@ -1613,6 +1746,9 @@ fn set_initial_display(job_state: &mut InstallJobState) {
                 }
             }
         }
+        InstallRequest::InstallContent {
+            title, icon_url, ..
+        } => Some((title.clone(), icon_url.clone())),
         _ => None,
     };
 

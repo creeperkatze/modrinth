@@ -26,6 +26,7 @@ import { install_existing_instance, install_pack_to_existing_instance } from '@/
 import { getInstanceIconUrl, kill, run } from '@/helpers/instance'
 import { get_by_instance_id } from '@/helpers/process'
 import { showInstanceInFolder } from '@/helpers/utils.js'
+import { instanceDiscoverRoute } from '@/platforms'
 
 const { handleError } = injectNotificationManager()
 const { formatMessage } = useVIntl()
@@ -137,10 +138,12 @@ const openFolder = async () => {
 
 const addContent = async () => {
 	if (props.instance.quarantined || installing.value || modLoading.value) return
-	await router.push({
-		path: `/browse/${props.instance.loader === 'vanilla' ? 'datapack' : 'mod'}`,
-		query: { i: props.instance.id },
-	})
+	await router.push(
+		instanceDiscoverRoute(
+			props.instance.id,
+			props.instance.loader === 'vanilla' ? 'datapack' : 'mod',
+		),
+	)
 }
 
 defineExpose({

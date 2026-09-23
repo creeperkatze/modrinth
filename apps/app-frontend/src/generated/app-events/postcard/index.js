@@ -542,6 +542,10 @@ function deserialize_INSTALL_JOB_KIND(d) {
         return {
             tag: "update_shared_instance"
         };
+    case 8:
+        return {
+            tag: "install_content"
+        };
     default:
         throw "variant not implemented"
     }

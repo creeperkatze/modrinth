@@ -261,17 +261,20 @@ pub async fn add_project_from_path(
     Ok(project_path)
 }
 
-#[tracing::instrument]
+/// Installs a file from an external platform, reporting download progress to `progress`.
+#[tracing::instrument(skip(progress))]
 pub async fn install_external_file(
     instance_id: &str,
-    request: InstallExternalFileRequest,
+    request: &InstallExternalFileRequest,
+    progress: Option<&mut fetch::FetchProgressFn<'_>>,
 ) -> crate::Result<String> {
     let state = State::get().await?;
     ensure_instance_content_unlocked(instance_id, &state).await?;
     let project_path =
         crate::state::instances::commands::install_external_file(
             instance_id,
-            &request,
+            request,
+            progress,
             &state,
         )
         .await?;

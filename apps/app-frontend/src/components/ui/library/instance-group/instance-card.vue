@@ -16,6 +16,7 @@ import { kill, run } from '@/helpers/instance'
 import { get_by_instance_id } from '@/helpers/process'
 import type { GameInstance } from '@/helpers/types'
 import { showInstanceInFolder } from '@/helpers/utils.js'
+import { instanceDiscoverRoute } from '@/platforms'
 
 type ProcessEvent = 'installing' | 'launched' | 'finished'
 
@@ -230,10 +231,12 @@ const openFolder = async () => {
 
 const addContent = async () => {
 	if (props.instance.quarantined || installing.value || modLoading.value) return
-	await router.push({
-		path: `/browse/${props.instance.loader === 'vanilla' ? 'datapack' : 'mod'}`,
-		query: { i: props.instance.id },
-	})
+	await router.push(
+		instanceDiscoverRoute(
+			props.instance.id,
+			props.instance.loader === 'vanilla' ? 'datapack' : 'mod',
+		),
+	)
 }
 
 defineExpose({
