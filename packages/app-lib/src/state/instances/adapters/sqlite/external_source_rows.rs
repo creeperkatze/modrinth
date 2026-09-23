@@ -23,7 +23,7 @@ impl TryFrom<ExternalContentSourceRow> for ExternalContentSource {
 
     fn try_from(row: ExternalContentSourceRow) -> crate::Result<Self> {
         Ok(Self {
-            platform: ExternalPlatform::from_str(&row.platform)?,
+            platform: ExternalPlatform::from_stored_str(&row.platform)?,
             project_id: row.project_id,
             file_id: row.file_id,
             project_slug: row.project_slug,

@@ -17,7 +17,7 @@ impl ExternalPlatform {
         }
     }
 
-    pub fn from_str(value: &str) -> crate::Result<Self> {
+    pub fn from_stored_str(value: &str) -> crate::Result<Self> {
         match value {
             "curseforge" => Ok(Self::CurseForge),
             other => Err(unknown_value("external platform", other)),
