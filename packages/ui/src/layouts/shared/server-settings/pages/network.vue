@@ -159,11 +159,7 @@
 								:placeholder="exampleDomain"
 							/>
 
-							<Button
-								class="!w-full sm:!w-auto"
-								:disabled="userDomain == ''"
-								@click="exportDnsRecords"
-							>
+							<Button :disabled="userDomain == ''" @click="exportDnsRecords">
 								<UploadIcon />
 								<span>Export</span>
 							</Button>
