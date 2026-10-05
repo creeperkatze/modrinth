@@ -109,28 +109,39 @@
 				</div>
 
 				<!-- Info -->
-				<div class="flex flex-col gap-2.5 pb-10">
-					<div class="text-lg m-0 font-semibold text-contrast">Info</div>
-					<div class="flex flex-col gap-2.5 rounded-xl bg-surface-2 p-4">
+				<Accordion
+					overflow-visible
+					class="pb-10"
+					button-class="flex w-full flex-col gap-2 bg-transparent m-0 p-0 border-none"
+				>
+					<template #title>
+						<span class="text-lg font-semibold text-contrast">Info</span>
+					</template>
+
+					<div
+						class="mt-2.5 flex flex-col divide-x-0 divide-y divide-solid divide-surface-5 rounded-2xl border border-solid border-surface-5 px-4"
+					>
 						<div
 							v-for="property in infoProperties"
 							:key="property.name"
-							class="flex items-start justify-between gap-4"
+							class="flex min-h-12 items-baseline justify-between gap-4 py-3"
 						>
-							<template v-if="property.value !== 'Unknown'">
-								<span class="mt-1">{{ property.name }}</span>
-								<CopyCode v-if="property.type === 'copy'" :text="property.value" />
-								<div
-									v-else-if="property.type === 'specs'"
-									class="flex flex-col items-end text-right text-sm leading-5 break-words"
-								>
-									<span v-for="line in property.lines" :key="line">{{ line }}</span>
-								</div>
-								<span v-else class="text-right text-sm break-words">{{ property.value }}</span>
-							</template>
+							<span class="shrink-0 font-semibold text-contrast">{{ property.name }}</span>
+							<CopyCode
+								v-if="property.type === 'copy'"
+								:text="property.value"
+								class="min-w-0 break-all text-left"
+							/>
+							<div
+								v-else-if="property.type === 'specs'"
+								class="flex flex-col items-end text-right text-sm leading-5"
+							>
+								<span v-for="line in property.lines" :key="line">{{ line }}</span>
+							</div>
+							<span v-else class="text-right break-words">{{ property.value }}</span>
 						</div>
 					</div>
-				</div>
+				</Accordion>
 			</div>
 		</div>
 		<div v-else />
@@ -150,7 +161,7 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useStorage } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 
-import { CopyCode, Input, Toggle } from '#ui/components'
+import { Accordion, CopyCode, Input, Toggle } from '#ui/components'
 import EditServerIcon from '#ui/components/servers/edit-server-icon/EditServerIcon.vue'
 import SaveBanner from '#ui/components/servers/SaveBanner.vue'
 import { useServerPermissions } from '#ui/composables/server-permissions'
@@ -297,7 +308,7 @@ const getServerSpecs = (product?: Labrinth.Billing.Internal.Product | null) => {
 }
 
 const serverHostname = computed(() =>
-	serverSubdomain.value ? `${serverSubdomain.value}.modrinth.gg` : 'Unknown',
+	data.value?.net?.domain ? `${data.value.net.domain}.modrinth.gg` : 'Unknown',
 )
 
 const serverSpecs = computed(() => getServerSpecs(serverProduct.value))
@@ -321,24 +332,28 @@ type InfoProperty =
 	  }
 
 // Info properties
-const infoProperties = computed<InfoProperty[]>(() => [
-	{ name: 'Server ID', value: serverId ?? 'Unknown', type: 'copy' },
-	{ name: 'Node', value: data.value?.node?.instance ?? 'Unknown', type: 'copy' },
-	{ name: 'Hostname', value: serverHostname.value, type: 'copy' },
-	{
-		name: 'Server specs',
-		value: serverSpecs.value ? 'Available' : 'Unknown',
-		type: 'specs',
-		lines: serverSpecs.value
-			? [
-					`${serverSpecs.value.sharedCpus} Shared CPU${Number(serverSpecs.value.sharedCpus) > 1 ? 's' : ''} (Bursts up to ${serverSpecs.value.burstCpus} CPUs)`,
-					`${serverSpecs.value.ramGb} GB RAM`,
-					`${serverSpecs.value.swapGb} GB Swap`,
-					`${serverSpecs.value.storageGb} GB SSD`,
-				]
-			: [],
-	},
-])
+const infoProperties = computed<InfoProperty[]>(() =>
+	(
+		[
+			{ name: 'Server ID', value: serverId ?? 'Unknown', type: 'copy' },
+			{ name: 'Node', value: data.value?.node?.instance ?? 'Unknown', type: 'copy' },
+			{ name: 'Hostname', value: serverHostname.value, type: 'copy' },
+			{
+				name: 'Server specs',
+				value: serverSpecs.value ? 'Available' : 'Unknown',
+				type: 'specs',
+				lines: serverSpecs.value
+					? [
+							`${serverSpecs.value.sharedCpus} Shared CPU${Number(serverSpecs.value.sharedCpus) > 1 ? 's' : ''} (Bursts up to ${serverSpecs.value.burstCpus} CPUs)`,
+							`${serverSpecs.value.ramGb} GB RAM`,
+							`${serverSpecs.value.swapGb} GB Swap`,
+							`${serverSpecs.value.storageGb} GB SSD`,
+						]
+					: [],
+			},
+		] satisfies InfoProperty[]
+	).filter((property) => property.value !== 'Unknown'),
+)
 
 // Unsaved changes tracking (API fields + preferences)
 const hasServerSettingsChanges = computed(
